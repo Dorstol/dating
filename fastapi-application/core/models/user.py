@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import func, Enum
+from sqlalchemy import func, Enum, String
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 
@@ -12,6 +12,7 @@ from .mixins.int_id_pk import IntIdPkMixin
 class User(IntIdPkMixin, Base):
     username: Mapped[str] = mapped_column(unique=True)
     email: Mapped[str] = mapped_column(unique=True)
+    password_hash: Mapped[str] = mapped_column(String, nullable=False,)
     created_at: Mapped[datetime] = mapped_column(
         server_default=func.now(),
         nullable=False,
