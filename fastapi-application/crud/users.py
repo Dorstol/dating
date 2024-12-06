@@ -1,11 +1,13 @@
-from typing import Sequence, Optional
+from typing import Optional
+from typing import Sequence
 
 from passlib.context import CryptContext
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.models import User
+from core.models.user import User
 from core.schemas.user import UserCreate, UserUpdate
+from core.security import verify_password
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -66,3 +68,19 @@ async def delete_user(session: AsyncSession, user_id: int) -> bool:
     await session.delete(user)
     await session.commit()
     return True
+
+
+async def get_user(username: str, session: AsyncSession) -> Optional[User]:
+    result = await session.execute(
+        select(User).where(User.username == username)
+    )
+    return result.scalar_one_or_none()
+
+
+async def authenticate_user(username: str, password: str, session: AsyncSession):
+    user = await get_user(username=username, session=session)
+    if not user:
+        return False
+    if not verify_password(password, user.password_hash):
+        return False
+    return user

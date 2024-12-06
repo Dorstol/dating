@@ -1,3 +1,4 @@
+import os
 from typing import Literal
 
 from pydantic import BaseModel
@@ -72,6 +73,9 @@ class Settings(BaseSettings):
     logging: LoggingConfig = LoggingConfig()
     api: ApiPrefix = ApiPrefix()
     db: DatabaseConfig
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "secret")
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_DAYS: int = 7
 
 
 settings = Settings()

@@ -6,6 +6,7 @@ from fastapi import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.dependencies.auth import get_current_user
 from core.models import db_helper
 from core.schemas.user import (
     UserRead,
@@ -16,9 +17,13 @@ from crud import users as users_crud
 router = APIRouter(tags=["Users"])
 
 
+@router.get("/me", response_model=UserRead)
+async def read_users_me(current_user: UserRead = Depends(get_current_user)):
+    return current_user
+
+
 @router.get("", response_model=list[UserRead])
 async def get_users(
-        # session: AsyncSession = Depends(db_helper.session_getter),
         session: Annotated[
             AsyncSession,
             Depends(db_helper.session_getter),
