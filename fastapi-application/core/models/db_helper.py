@@ -1,5 +1,4 @@
 from typing import AsyncGenerator
-
 from sqlalchemy.ext.asyncio import (
     create_async_engine,
     AsyncEngine,
@@ -7,6 +6,7 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
 )
 
+from core.models.user import User
 from core.config import settings
 
 

@@ -1,12 +1,13 @@
 __all__ = (
     "db_helper",
     "Base",
-    "User",
+    "User","AccessToken",
     "GenderEnum",
     "InterestEnum",
 )
 
-from .db_helper import db_helper
+from .access_token import AccessToken
 from .base import Base
-from .user import User
+from .db_helper import db_helper
 from .enums import GenderEnum, InterestEnum
+from .user import User

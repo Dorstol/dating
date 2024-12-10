@@ -1,15 +1,11 @@
 from typing import Optional
 from typing import Sequence
 
-from passlib.context import CryptContext
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from core.models.user import User
 from core.schemas.user import UserCreate, UserUpdate
 from core.security import verify_password
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 async def get_all_users(session: AsyncSession) -> Sequence[User]:
@@ -41,15 +37,17 @@ async def get_user_by_id(session: AsyncSession, user_id: int) -> Optional[User]:
     return user
 
 
-async def update_user(session: AsyncSession, user_id: int, user_update: UserUpdate) -> Optional[User]:
+async def update_user(
+        session: AsyncSession, user_id: int, user_update: UserUpdate
+) -> Optional[User]:
     result = await session.execute(select(User).where(User.id == user_id))
     user = result.scalars().first()
     if user is None:
         return None
 
     user_data = user_update.dict(exclude_unset=True)
-    if 'password' in user_data:
-        user_data['hashed_password'] = pwd_context.hash(user_data.pop('password'))
+    if "password" in user_data:
+        user_data["hashed_password"] = pwd_context.hash(user_data.pop("password"))
 
     for key, value in user_data.items():
         setattr(user, key, value)
@@ -71,9 +69,7 @@ async def delete_user(session: AsyncSession, user_id: int) -> bool:
 
 
 async def get_user(username: str, session: AsyncSession) -> Optional[User]:
-    result = await session.execute(
-        select(User).where(User.username == username)
-    )
+    result = await session.execute(select(User).where(User.username == username))
     return result.scalar_one_or_none()
 
 
