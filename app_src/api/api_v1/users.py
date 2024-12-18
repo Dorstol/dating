@@ -1,14 +1,13 @@
-import os
-from uuid import uuid4
+import uuid
 
-from fastapi import APIRouter, Depends, File, UploadFile, HTTPException
-from sqlalchemy import select
+from PIL import Image
+from fastapi import APIRouter, Depends, File, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from fastapi_users import schemas
 from core.config import settings
 from core.models import User, db_helper
 from core.schemas.user import UserRead, UserUpdate
-from .fastapi_users import fastapi_users
+from .fastapi_users import fastapi_users, current_user
 
 router = APIRouter(
     prefix=settings.api.v1.users,
@@ -24,35 +23,37 @@ router.include_router(
 
 UPLOAD_DIR = "static/photos"
 
-@router.post("/{user_id}/upload-photo")
+
+@router.post(
+    "/me/upload_photo",
+    name="users:upload_photo",
+)
 async def upload_user_photo(
-    user: User = Depends(fastapi_users.current_user),
-    file: UploadFile = File(...),
-    session: AsyncSession = Depends(db_helper.session_getter),
+        file: UploadFile = File(...),
+        user: User = Depends(current_user),
+        session: AsyncSession = Depends(db_helper.session_getter),
 ):
-    # Validate file type (e.g., allow only images)
-    if file.content_type not in ["image/jpeg", "image/png"]:
-        raise HTTPException(status_code=400, detail="Invalid file type. Only JPEG and PNG are allowed.")
+    if file.size >= 1000000:
+        return {"detail": "UNSUPPORTED_FILE_SIZE"}
 
-    # Generate a unique filename
-    filename = f"{uuid4().hex}_{file.filename}"
-    file_path = os.path.join(UPLOAD_DIR, filename)
+    filename = file.filename
+    extension = filename.split(".")[1]
 
-    # Save the file
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-    with open(file_path, "wb") as f:
-        content = await file.read()
-        f.write(content)
+    if extension not in ["jpg", "png", "jpeg", "svg"]:
+        return {"detail": "FILE_EXTENSION_NOT_ALLOWED"}
 
-    # Update the user's photo in the database
-    query = select(User).where(User.id == user.id)
-    result = await session.execute(query)
-    user = result.scalar_one_or_none()
+    token_name = f"{uuid.uuid4()}.{extension}"
+    generated_name = f"{UPLOAD_DIR}/{token_name}"
+    file_content = await file.read()
 
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    with open(generated_name, "wb") as f:
+        f.write(file_content)
 
-    user.photo = f"/static/photos/{filename}"
+    # Pillow
+    img = Image.open(generated_name)
+    img.save(generated_name, optimize=True)
+
+    user.photo = token_name
+    session.add(user)
     await session.commit()
-
-    return {"message": "Photo uploaded and updated successfully", "photo_url": user.photo}
+    return schemas.model_validate(UserRead, user)

@@ -12,6 +12,7 @@ class UserRead(schemas.BaseUser[UserIdType]):
     interest: Optional[InterestEnum]
     bio: Optional[str]
     age: Optional[int]
+    photo: Optional[str]
     is_active: bool = Field(exclude=True)
     is_superuser: bool = Field(exclude=True)
     is_verified: bool = Field(exclude=True)
