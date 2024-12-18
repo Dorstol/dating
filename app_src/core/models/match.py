@@ -14,11 +14,17 @@ if TYPE_CHECKING:
 
 class Match(Base, IntIdPkMixin):
     user_id: Mapped[UserIdType] = mapped_column(
-        ForeignKey("users.id"),
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE",
+        ),
         nullable=False,
     )
     matched_user_id: Mapped[UserIdType] = mapped_column(
-        ForeignKey("users.id"),
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE",
+        ),
         nullable=False,
     )
     # Todo status

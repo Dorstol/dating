@@ -2,12 +2,13 @@ from enum import Enum
 
 
 class GenderEnum(str, Enum):
-    none = None
-    male = "male"
-    female = "female"
+    MALE = "Male"
+    FEMALE = "Female"
+    OTHER = "Other"
 
 
 class InterestEnum(str, Enum):
-    none = None
-    male = "male"
-    female = "female"
+    SPORTS = "Sports"
+    MUSIC = "Music"
+    ART = "Art"
+    OTHER = "Other"

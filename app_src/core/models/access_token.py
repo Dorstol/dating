@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING
 
-from core.types.user_id import UserIdType
 from fastapi_users_db_sqlalchemy.access_token import (
     SQLAlchemyAccessTokenDatabase,
     SQLAlchemyBaseAccessTokenTable,
@@ -8,6 +7,7 @@ from fastapi_users_db_sqlalchemy.access_token import (
 from sqlalchemy import Integer, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
+from core.types.user_id import UserIdType
 from .base import Base
 
 if TYPE_CHECKING:
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 class AccessToken(Base, SQLAlchemyBaseAccessTokenTable[UserIdType]):
     user_id: Mapped[UserIdType] = mapped_column(
         Integer,
-        ForeignKey("users.id", on_delete="cascade"),
+        ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
     )
 

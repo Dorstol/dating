@@ -1,5 +1,5 @@
 from fastapi import Depends
-from sqlalchemy import select, exists
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.api_v1.fastapi_users import current_user
@@ -11,14 +11,9 @@ async def find_matches(
     session: AsyncSession,
     user: User = Depends(current_user),
 ):
-    subquery = exists().where(
-        Match.user_id == user.id,
-        Match.matched_user_id == User.id
-    )
-
     query = select(User).where(
+        User.gender != user.gender,
         User.id != user.id,
-        ~subquery
     )
 
     result = await session.execute(query)
@@ -58,7 +53,7 @@ async def process_match(
 
     session.add(new_match)
     await session.commit()
-    return {"match_saved": True, "is_mutual": bool(existing_match)}
+    return new_match
 
 
 async def save_match(

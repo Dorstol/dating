@@ -7,7 +7,7 @@ from sqlalchemy.orm import joinedload
 
 from core.config import settings
 from core.models import User, Match, db_helper
-from core.schemas.match import MatchRead
+from core.schemas.match import MatchResponse
 from core.schemas.user import UserRead
 from crud.matches import find_matches, process_match
 from .fastapi_users import current_user
@@ -35,7 +35,7 @@ async def suggest_matches(
 
 @router.post(
     "/{matched_user_id}",
-    response_model=MatchRead,
+    response_model=MatchResponse,
 )
 async def like_user(
     matched_user_id: int,
@@ -55,7 +55,7 @@ async def like_user(
 
 @router.get(
     "",
-    response_model=MatchRead,
+    response_model=List[MatchResponse],
 )
 async def get_matches(
     user: User = Depends(current_user),

@@ -23,7 +23,7 @@ class User(Base, IntIdPkMixin, SQLAlchemyBaseUserTable[UserIdType]):
     gender: Mapped[GenderEnum] = mapped_column(
         Enum(GenderEnum),
         nullable=True,
-        server_default=GenderEnum.none,
+        default=GenderEnum.OTHER,
     )
     # photo
     age: Mapped[int] = mapped_column(nullable=True)
@@ -31,7 +31,7 @@ class User(Base, IntIdPkMixin, SQLAlchemyBaseUserTable[UserIdType]):
     interest: Mapped[InterestEnum] = mapped_column(
         Enum(InterestEnum),
         nullable=True,
-        server_default=InterestEnum.none,
+        default=GenderEnum.OTHER,
     )
 
     @classmethod
