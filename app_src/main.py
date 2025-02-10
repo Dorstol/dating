@@ -2,7 +2,7 @@ import logging
 
 import uvicorn
 from fastapi.staticfiles import StaticFiles
-
+from fastapi.middleware.cors import CORSMiddleware
 from api import router as api_router
 from core.config import settings
 from create_fastapi_app import create_app
@@ -20,6 +20,14 @@ main_app.mount("/static", StaticFiles(directory="static"), name="static", )
 
 main_app.include_router(
     api_router,
+)
+
+main_app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 if __name__ == "__main__":
