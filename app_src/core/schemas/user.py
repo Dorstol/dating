@@ -33,9 +33,7 @@ class UserCreate(schemas.BaseUserCreate):
     first_name: str
     last_name: str
     gender: GenderEnum
-    interest: InterestEnum
     age: int
-    photo: str
     location: str
     is_active: bool = Field(default=True, exclude=True)
     is_superuser: bool = Field(default=False, exclude=True)

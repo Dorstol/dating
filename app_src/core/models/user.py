@@ -29,7 +29,7 @@ class User(Base, IntIdPkMixin, SQLAlchemyBaseUserTable[UserIdType]):
     )
     photo: Mapped[str] = mapped_column(
         String(255),
-        nullable=False,
+        nullable=True,
     )
     location: Mapped[str] = mapped_column(nullable=False)
     age: Mapped[int] = mapped_column(nullable=False)
