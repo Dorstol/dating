@@ -20,6 +20,8 @@ class User(Base, IntIdPkMixin, SQLAlchemyBaseUserTable[UserIdType]):
         server_default=func.now(),
         nullable=False,
     )
+    first_name: Mapped[str] = mapped_column(nullable=False)
+    last_name: Mapped[str] = mapped_column(nullable=False)
     gender: Mapped[GenderEnum] = mapped_column(
         Enum(GenderEnum),
         nullable=True,
@@ -27,14 +29,16 @@ class User(Base, IntIdPkMixin, SQLAlchemyBaseUserTable[UserIdType]):
     )
     photo: Mapped[str] = mapped_column(
         String(255),
-        nullable=True,
+        nullable=False,
     )
-    age: Mapped[int] = mapped_column(nullable=True)
+    location: Mapped[str] = mapped_column(nullable=False)
+    age: Mapped[int] = mapped_column(nullable=False)
     bio: Mapped[str] = mapped_column(nullable=True)
+    # rework interests (get array of word, split them and make tags from it)
     interest: Mapped[InterestEnum] = mapped_column(
         Enum(InterestEnum),
         nullable=True,
-        default=GenderEnum.OTHER,
+        default=InterestEnum.OTHER,
     )
 
     @classmethod
