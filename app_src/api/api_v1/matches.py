@@ -17,6 +17,9 @@ router = APIRouter(
     tags=["Matches"],
 )
 
+@router.get("/test")
+async def test_endpoint():
+    return {"status_code": 200, "message": "success"}
 
 @router.get(
     "/suggestion",
