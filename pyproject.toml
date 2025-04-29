@@ -1,23 +1,31 @@
-[tool.poetry]
-package-mode = false
+[project]
+name = ""
+version = "0.0.1"
+requires-python = "~=3.12"
+dependencies = [
+    "fastapi>=0.111.0,<0.112",
+    "uvicorn[standard]>=0.29.0,<0.30",
+    "pydantic[email]>=2.7.1,<3",
+    "pydantic-settings>=2.2.1,<3",
+    "sqlalchemy[asyncio]>=2.0.30,<3",
+    "asyncpg>=0.29.0,<0.30",
+    "alembic>=1.13.1,<2",
+    "gunicorn>=23.0.0,<24",
+    "passlib>=1.7.4,<2",
+    "orjson>=3.10.12,<4",
+    "redis>=5.2.0,<6",
+    "python-jose[cryptography]>=3.3.0,<4",
+    "fastapi-users-db-sqlalchemy>=6.0.1,<7",
+    "pillow>=11.1.0,<12",
+    "prometheus-client>=0.21.1",
+]
 
-[tool.poetry.dependencies]
-python = "^3.12"
-fastapi = "^0.111.0"
-uvicorn = {extras = ["standard"], version = "^0.29.0"}
-pydantic = {extras = ["email"], version = "^2.7.1"}
-pydantic-settings = "^2.2.1"
-sqlalchemy = {extras = ["asyncio"], version = "^2.0.30"}
-asyncpg = "^0.29.0"
-alembic = "^1.13.1"
-gunicorn = "^23.0.0"
-passlib = "^1.7.4"
-orjson = "^3.10.12"
-redis = "^5.2.0"
-python-jose = {extras = ["cryptography"], version = "^3.3.0"}
-fastapi-users-db-sqlalchemy = "^6.0.1"
-pillow = "^11.1.0"
+[dependency-groups]
+dev = [
+    "black>=24.4.2,<25",
+    "prometheus-client>=0.21.1",
+]
 
-[tool.poetry.group.dev.dependencies]
-black = "^24.4.2"
+[tool.uv]
+package = false
 
