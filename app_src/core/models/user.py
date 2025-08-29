@@ -2,17 +2,19 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTable, SQLAlchemyUserDatabase
-from sqlalchemy import func, Enum, String
-from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import mapped_column
+from sqlalchemy import Enum, Integer, String, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.types.user_id import UserIdType
+
 from .base import Base
-from .enums import GenderEnum, InterestEnum
+from .enums import GenderEnum
 from .mixins.int_id_pk import IntIdPkMixin
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
+
+    from .interest import Interest
 
 
 class User(Base, IntIdPkMixin, SQLAlchemyBaseUserTable[UserIdType]):
@@ -34,13 +36,41 @@ class User(Base, IntIdPkMixin, SQLAlchemyBaseUserTable[UserIdType]):
     location: Mapped[str] = mapped_column(nullable=False)
     age: Mapped[int] = mapped_column(nullable=False)
     bio: Mapped[str] = mapped_column(nullable=True)
-    # rework interests (get array of word, split them and make tags from it)
-    interest: Mapped[InterestEnum] = mapped_column(
-        Enum(InterestEnum),
-        nullable=True,
-        default=InterestEnum.OTHER,
+
+    rating: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+        server_default="0",
+    )
+
+    # Связь с интересами (многие-ко-многим)
+    interests: Mapped[list["Interest"]] = relationship(
+        "Interest",
+        secondary="user_interests",
+        back_populates="users",
+        lazy="selectin",
     )
 
     @classmethod
     def get_db(cls, session: "AsyncSession"):
         return SQLAlchemyUserDatabase(session, cls)
+
+    def get_interests_names(self) -> list[str]:
+        """Получить список названий интересов пользователя"""
+        return [interest.name for interest in self.interests]
+
+    def has_interest(self, interest_name: str) -> bool:
+        """Проверить, есть ли у пользователя определенный интерес"""
+        return any(
+            interest.name.lower() == interest_name.lower()
+            for interest in self.interests
+        )
+
+    def increment_rating(self) -> None:
+        """Увеличить рейтинг пользователя"""
+        self.rating += 1
+
+    def decrement_rating(self) -> None:
+        """Уменьшить рейтинг пользователя"""
+        self.rating = max(0, self.rating - 1)

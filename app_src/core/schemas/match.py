@@ -10,6 +10,5 @@ class MatchResponse(BaseModel):
     is_mutual: bool
 
 
-
 class MatchCreate(BaseModel):
     matched_user_id: UserIdType

@@ -5,10 +5,7 @@ from os import getenv
 from api.dependencies.authentication.user_manager import get_user_manager
 from api.dependencies.authentication.users import get_user_db
 from core.authentication.user_manager import UserManager
-from core.models import (
-    db_helper,
-    User,
-)
+from core.models import User, db_helper
 from core.schemas.user import UserCreate
 
 get_users_db_context = contextlib.asynccontextmanager(get_user_db)

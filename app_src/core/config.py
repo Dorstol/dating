@@ -1,12 +1,8 @@
 import os
 from typing import Literal
 
-from pydantic import BaseModel
-from pydantic import PostgresDsn
-from pydantic_settings import (
-    BaseSettings,
-    SettingsConfigDict,
-)
+from pydantic import BaseModel, PostgresDsn
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 LOG_DEFAULT_FORMAT = (
     "[%(asctime)s.%(msecs)03d] %(module)10s:%(lineno)-3d %(levelname)-7s - %(message)s"
@@ -41,6 +37,7 @@ class ApiV1Prefix(BaseModel):
     auth: str = "/auth"
     users: str = "/users"
     matches: str = "/matches"
+    interests: str = "/interests"
 
 
 class ApiPrefix(BaseModel):

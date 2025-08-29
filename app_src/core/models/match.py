@@ -5,6 +5,7 @@ from sqlalchemy import ForeignKey, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.types.user_id import UserIdType
+
 from .base import Base
 from .mixins.int_id_pk import IntIdPkMixin
 

@@ -39,3 +39,39 @@ services:
       - "8081:8081"
     depends_on:
       - redis
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dating_api
+    environment:
+      # Map to pydantic-settings via env_nested_delimiter and prefix APP_CONFIG__
+      APP_CONFIG__DB__URL: postgresql+asyncpg://user:password@pg:5432/dating
+      APP_CONFIG__DB__ECHO: "false"
+      APP_CONFIG__DB__POOL_SIZE: "50"
+      APP_CONFIG__DB__MAX_OVERFLOW: "10"
+      APP_CONFIG__ACCESS_TOKEN__LIFETIME_SECONDS: "3600"
+      APP_CONFIG__ACCESS_TOKEN__RESET_PASSWORD_TOKEN_SECRET: dev-reset-secret
+      APP_CONFIG__ACCESS_TOKEN__VERIFICATION_TOKEN_SECRET: dev-verify-secret
+      APP_CONFIG__RUN__HOST: 0.0.0.0
+      APP_CONFIG__RUN__PORT: "8000"
+      APP_CONFIG__GUNICORN__HOST: 0.0.0.0
+      APP_CONFIG__GUNICORN__PORT: "8000"
+      APP_CONFIG__GUNICORN__WORKERS: "2"
+      APP_CONFIG__GUNICORN__TIMEOUT: "90"
+      APP_CONFIG__LOGGING__LOG_LEVEL: info
+      APP_CONFIG__SECRET_KEY: dev-secret
+      APP_CONFIG__REDIS_URL: redis://redis:6379
+      # CORS origin should be set per environment
+      APP_CONFIG__API__PREFIX: /api
+    ports:
+      - "8000:8000"
+    volumes:
+      - photos:/app/static/photos
+    depends_on:
+      - pg
+      - redis
+
+volumes:
+  photos:

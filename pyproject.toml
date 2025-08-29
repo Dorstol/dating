@@ -23,9 +23,43 @@ dependencies = [
 [dependency-groups]
 dev = [
     "black>=24.4.2,<25",
-    "prometheus-client>=0.21.1",
+    "isort>=5.13.0,<6",
+    "ruff>=0.4.0,<1",
 ]
 
 [tool.uv]
 package = false
+
+# Black - форматтер кода
+[tool.black]
+line-length = 88
+target-version = ['py312']
+
+# isort - сортировка импортов
+[tool.isort]
+profile = "black"
+line_length = 88
+known_first_party = ["app_src", "api", "core", "crud", "utils"]
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+
+# Ruff - быстрый линтер
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "B",  # flake8-bugbear
+    "UP", # pyupgrade
+]
+ignore = [
+    "E501",  # line too long, handled by black
+    "B008",  # do not perform function calls in argument defaults
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
 

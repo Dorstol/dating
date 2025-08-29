@@ -5,12 +5,15 @@ __all__ = (
     "Match",
     "AccessToken",
     "GenderEnum",
-    "InterestEnum",
+    "Interest",
+    "user_interests",
 )
 
 from .access_token import AccessToken
+from .associations import user_interests
 from .base import Base
 from .db_helper import db_helper
-from .enums import GenderEnum, InterestEnum
+from .enums import GenderEnum
+from .interest import Interest
 from .match import Match
 from .user import User
