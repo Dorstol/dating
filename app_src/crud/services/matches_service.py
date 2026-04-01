@@ -1,9 +1,10 @@
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.models import Match, User
+from core.models import Block, Match, User
 from core.models.associations import user_interests
 from core.types.user_id import UserIdType
+from crud.services.block_report_service import BlockReportService
 
 
 class MatchingService:
@@ -22,11 +23,18 @@ class MatchingService:
         Returns:
             Tuple of (matched users list, total count).
         """
+        # Получаем ID заблокированных пользователей (в обе стороны)
+        blocked_ids = await BlockReportService.get_blocked_user_ids(
+            session, user.id
+        )
+
         base_filter = and_(
             User.gender != user.gender,
             User.id != user.id,
             User.is_active.is_(True),
         )
+        if blocked_ids:
+            base_filter = and_(base_filter, User.id.notin_(blocked_ids))
 
         # Total count of all potential matches
         total_result = await session.execute(
@@ -36,7 +44,7 @@ class MatchingService:
 
         if not user.interests:
             matches = await MatchingService._find_basic_matches(
-                session, user, limit, offset=offset
+                session, user, limit, offset=offset, blocked_ids=blocked_ids
             )
             return matches, total
 
@@ -72,7 +80,8 @@ class MatchingService:
             matched_user_ids = [u.id for u in matched_users]
 
             basic_matches = await MatchingService._find_basic_matches(
-                session, user, remaining_limit, exclude_ids=matched_user_ids
+                session, user, remaining_limit, exclude_ids=matched_user_ids,
+                blocked_ids=blocked_ids,
             )
             matched_users.extend(basic_matches)
 
@@ -85,6 +94,7 @@ class MatchingService:
         limit: int,
         exclude_ids: list[int] | None = None,
         offset: int = 0,
+        blocked_ids: list[int] | None = None,
     ) -> list[User]:
         """Find basic matches without interest filtering, sorted by rating."""
         query = select(User).where(
@@ -95,6 +105,9 @@ class MatchingService:
 
         if exclude_ids:
             query = query.where(User.id.notin_(exclude_ids))
+
+        if blocked_ids:
+            query = query.where(User.id.notin_(blocked_ids))
 
         query = query.order_by(
             User.rating.desc(),
@@ -150,6 +163,13 @@ class MatchingService:
         # Validation
         if user.id == matched_user_id:
             raise ValueError("Cannot match with yourself")
+
+        # Проверяем блокировку в обе стороны
+        blocked_ids = await BlockReportService.get_blocked_user_ids(
+            session, user.id
+        )
+        if matched_user_id in blocked_ids:
+            raise ValueError("Cannot like a blocked user")
 
         # Get the user being liked
         matched_user = await MatchingService._get_user_by_id(session, matched_user_id)

@@ -8,7 +8,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
 from core.models import User, db_helper
+from core.schemas.block import BlockResponse
+from core.schemas.report import ReportCreate, ReportResponse
 from core.schemas.user import UserRead, UserUpdate
+from crud.services.block_report_service import BlockReportService
 
 from .fastapi_users import current_user, fastapi_users
 
@@ -78,3 +81,73 @@ async def upload_user_photo(
     session.add(user)
     await session.commit()
     return schemas.model_validate(UserRead, user)
+
+
+@router.post(
+    "/{user_id}/block",
+    response_model=BlockResponse,
+    summary="Block a user",
+)
+async def block_user(
+    user_id: int,
+    user: User = Depends(current_user),
+    session: AsyncSession = Depends(db_helper.session_getter),
+):
+    """Заблокировать пользователя"""
+    try:
+        block = await BlockReportService.block_user(session, user.id, user_id)
+        return block
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@router.delete(
+    "/{user_id}/block",
+    summary="Unblock a user",
+)
+async def unblock_user(
+    user_id: int,
+    user: User = Depends(current_user),
+    session: AsyncSession = Depends(db_helper.session_getter),
+):
+    """Разблокировать пользователя"""
+    try:
+        await BlockReportService.unblock_user(session, user.id, user_id)
+        return {"detail": "User unblocked"}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@router.get(
+    "/blocked",
+    response_model=list[BlockResponse],
+    summary="Get blocked users",
+)
+async def get_blocked_users(
+    user: User = Depends(current_user),
+    session: AsyncSession = Depends(db_helper.session_getter),
+):
+    """Получить список заблокированных пользователей"""
+    blocks = await BlockReportService.get_blocked_users(session, user.id)
+    return blocks
+
+
+@router.post(
+    "/{user_id}/report",
+    response_model=ReportResponse,
+    summary="Report a user",
+)
+async def report_user(
+    user_id: int,
+    report_data: ReportCreate,
+    user: User = Depends(current_user),
+    session: AsyncSession = Depends(db_helper.session_getter),
+):
+    """Пожаловаться на пользователя"""
+    try:
+        report = await BlockReportService.report_user(
+            session, user.id, user_id, report_data.reason, report_data.description
+        )
+        return report
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
