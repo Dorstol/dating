@@ -117,10 +117,10 @@ def metrics():
 
 main_app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://dev.dorstol.tech"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=settings.cors.allowed_origins,
+    allow_credentials=settings.cors.allow_credentials,
+    allow_methods=settings.cors.allow_methods,
+    allow_headers=settings.cors.allow_headers,
 )
 
 if __name__ == "__main__":

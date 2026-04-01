@@ -63,7 +63,7 @@ services:
       APP_CONFIG__LOGGING__LOG_LEVEL: info
       APP_CONFIG__SECRET_KEY: dev-secret
       APP_CONFIG__REDIS_URL: redis://redis:6379
-      # CORS origin should be set per environment
+      APP_CONFIG__CORS__ALLOWED_ORIGINS: '["https://dev.dorstol.tech"]'
       APP_CONFIG__API__PREFIX: /api
     ports:
       - "8000:8000"
