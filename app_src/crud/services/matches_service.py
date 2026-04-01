@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.models import Match, User
 from core.models.associations import user_interests
 from core.types.user_id import UserIdType
+from crud.services.cache_service import CacheService
 
 
 class MatchingService:
@@ -188,6 +189,9 @@ class MatchingService:
             )
             session.add(reverse_match)
             await session.commit()
+
+            await CacheService.invalidate_suggestions(user.id)
+            await CacheService.invalidate_suggestions(matched_user.id)
             return reverse_match
         else:
             # We already liked this user
@@ -209,6 +213,9 @@ class MatchingService:
         )
         session.add(new_match)
         await session.commit()
+
+        await CacheService.invalidate_suggestions(user.id)
+        await CacheService.invalidate_suggestions(matched_user.id)
         return new_match
 
 
