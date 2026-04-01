@@ -76,6 +76,13 @@ class RateLimitConfig(BaseModel):
     suggestion: str = "20/minute"
 
 
+class CorsConfig(BaseModel):
+    allowed_origins: list[str] = ["https://dev.dorstol.tech"]
+    allow_credentials: bool = True
+    allow_methods: list[str] = ["*"]
+    allow_headers: list[str] = ["*"]
+
+
 class AccessToken(BaseModel):
     lifetime_seconds: int = 3600
     reset_password_token_secret: str
@@ -95,6 +102,7 @@ class Settings(BaseSettings):
     api: ApiPrefix = ApiPrefix()
     db: DatabaseConfig
     access_token: AccessToken
+    cors: CorsConfig = CorsConfig()
     rate_limit: RateLimitConfig = RateLimitConfig()
     SECRET_KEY: str = os.getenv("SECRET_KEY", "secret")
     REDIS_URL: str = "redis://localhost:6379"
