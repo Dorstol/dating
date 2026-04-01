@@ -1,8 +1,6 @@
-from fastapi import Depends
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.api_v1.fastapi_users import current_user
 from core.models import Match, User
 from core.models.associations import user_interests
 from core.types.user_id import UserIdType
@@ -13,32 +11,43 @@ class MatchingService:
 
     @staticmethod
     async def find_matches_by_interests_and_rating(
-        session: AsyncSession, user: User, limit: int = 20
-    ) -> list[User]:
+        session: AsyncSession,
+        user: User,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> tuple[list[User], int]:
         """
         Find potential matches based on common interests and sorted by rating.
 
-        Algorithm:
-        1. Find users with common interests
-        2. Sort by rating (higher rating = higher priority)
-        3. Apply basic filtering (different gender, active users, etc.)
+        Returns:
+            Tuple of (matched users list, total count).
         """
-        if not user.interests:
-            # If user has no interests, fall back to basic matching
-            return await MatchingService._find_basic_matches(session, user, limit)
+        base_filter = and_(
+            User.gender != user.gender,
+            User.id != user.id,
+            User.is_active.is_(True),
+        )
 
-        # Get user interest IDs for efficient querying
+        # Total count of all potential matches
+        total_result = await session.execute(
+            select(func.count()).select_from(User).where(base_filter)
+        )
+        total = total_result.scalar() or 0
+
+        if not user.interests:
+            matches = await MatchingService._find_basic_matches(
+                session, user, limit, offset=offset
+            )
+            return matches, total
+
         user_interest_ids = [interest.id for interest in user.interests]
 
-        # Find users with common interests, sorted by rating (desc) and number of common interests
         query = (
             select(User)
             .join(user_interests, User.id == user_interests.c.user_id)
             .where(
                 and_(
-                    User.gender != user.gender,
-                    User.id != user.id,
-                    User.is_active.is_(True),
+                    base_filter,
                     user_interests.c.interest_id.in_(user_interest_ids),
                 )
             )
@@ -46,18 +55,18 @@ class MatchingService:
             .order_by(
                 func.count(
                     user_interests.c.interest_id
-                ).desc(),  # More common interests first
-                User.rating.desc(),  # Higher rating second
-                User.created_at.desc(),  # Newer users third
+                ).desc(),
+                User.rating.desc(),
+                User.created_at.desc(),
             )
             .limit(limit)
+            .offset(offset)
         )
 
         result = await session.execute(query)
-        matched_users = result.scalars().all()
+        matched_users = list(result.scalars().all())
 
-        # If we don't have enough matches with common interests,
-        # fill the remaining slots with basic matches
+        # Fill remaining slots with basic matches if needed
         if len(matched_users) < limit:
             remaining_limit = limit - len(matched_users)
             matched_user_ids = [u.id for u in matched_users]
@@ -67,7 +76,7 @@ class MatchingService:
             )
             matched_users.extend(basic_matches)
 
-        return matched_users
+        return matched_users, total
 
     @staticmethod
     async def _find_basic_matches(
@@ -75,6 +84,7 @@ class MatchingService:
         user: User,
         limit: int,
         exclude_ids: list[int] | None = None,
+        offset: int = 0,
     ) -> list[User]:
         """Find basic matches without interest filtering, sorted by rating."""
         query = select(User).where(
@@ -87,12 +97,12 @@ class MatchingService:
             query = query.where(User.id.notin_(exclude_ids))
 
         query = query.order_by(
-            User.rating.desc(),  # Higher rating first
-            User.created_at.desc(),  # Newer users second
-        ).limit(limit)
+            User.rating.desc(),
+            User.created_at.desc(),
+        ).limit(limit).offset(offset)
 
         result = await session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     @staticmethod
     async def _get_existing_match(
@@ -202,28 +212,32 @@ class MatchingService:
         return new_match
 
 
-# Legacy functions for backward compatibility
-async def find_matches(
-    session: AsyncSession, user: User = Depends(current_user), limit: int = 20
-) -> list[User]:
-    """
-    Find potential matches for a user.
+    @staticmethod
+    async def get_user_matches(
+        session: AsyncSession,
+        user_id: UserIdType,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> tuple[list[Match], int]:
+        """Get paginated matches for a user with total count."""
+        from sqlalchemy.orm import joinedload
 
-    Uses the new matching algorithm based on common interests and ratings.
-    """
-    return await MatchingService.find_matches_by_interests_and_rating(
-        session, user, limit
-    )
+        # Total count
+        total_result = await session.execute(
+            select(func.count()).select_from(Match).where(Match.user_id == user_id)
+        )
+        total = total_result.scalar() or 0
 
+        # Paginated results
+        query = (
+            select(Match)
+            .where(Match.user_id == user_id)
+            .options(joinedload(Match.matched_user))
+            .order_by(Match.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        result = await session.execute(query)
+        matches = list(result.scalars().all())
 
-async def process_match(
-    session: AsyncSession,
-    matched_user_id: UserIdType,
-    user: User = Depends(current_user),
-) -> Match:
-    """
-    Process a match (like) action.
-
-    Uses the new service-based approach for better maintainability.
-    """
-    return await MatchingService.process_like(session, user, matched_user_id)
+        return matches, total

@@ -11,6 +11,7 @@ from core.schemas.interest import (
     UserInterestsResponse,
     UserInterestsUpdate,
 )
+from core.schemas.pagination import PaginatedResponse
 from crud.services.interest_service import InterestService
 
 router = APIRouter(
@@ -19,25 +20,31 @@ router = APIRouter(
 )
 
 
-@router.get("/popular", response_model=list[InterestRead])
+@router.get("/popular", response_model=PaginatedResponse[InterestRead])
 async def get_popular_interests(
     limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     session: AsyncSession = Depends(db_helper.session_getter),
 ):
     """Получить популярные интересы"""
-    interests = await InterestService.get_popular_interests(session, limit)
-    return interests
+    items, total = await InterestService.get_popular_interests(
+        session, limit, offset
+    )
+    return PaginatedResponse(items=items, total=total, limit=limit, offset=offset)
 
 
-@router.get("/search", response_model=list[InterestRead])
+@router.get("/search", response_model=PaginatedResponse[InterestRead])
 async def search_interests(
     q: str = Query(..., min_length=1, max_length=50),
     limit: int = Query(10, ge=1, le=50),
+    offset: int = Query(0, ge=0),
     session: AsyncSession = Depends(db_helper.session_getter),
 ):
     """Поиск интересов по названию"""
-    interests = await InterestService.search_interests(session, q, limit)
-    return interests
+    items, total = await InterestService.search_interests(
+        session, q, limit, offset
+    )
+    return PaginatedResponse(items=items, total=total, limit=limit, offset=offset)
 
 
 @router.get("/my", response_model=UserInterestsResponse)

@@ -1,15 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
 
 from core.config import settings
-from core.models import Match, User, db_helper
+from core.models import User, db_helper
 from core.schemas.match import MatchResponse
+from core.schemas.pagination import PaginatedResponse
 from core.schemas.user import UserRead
-from crud.services.matches_service import find_matches, process_match
+from crud.services.matches_service import MatchingService
 
 from .fastapi_users import current_user
 
@@ -23,22 +22,26 @@ router = APIRouter(
 
 @router.get(
     "/suggestion",
-    response_model=list[UserRead],
+    response_model=PaginatedResponse[UserRead],
     summary="Get match suggestions",
     description="Get a list of potential matches for the current user based on interests and ratings",
 )
 @limiter.limit(settings.rate_limit.suggestion)
 async def suggest_matches(
     request: Request,
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     user: User = Depends(current_user),
     session: AsyncSession = Depends(db_helper.session_getter),
 ):
     """Get potential matches for the current user."""
-    matches = await find_matches(
+    items, total = await MatchingService.find_matches_by_interests_and_rating(
         session=session,
         user=user,
+        limit=limit,
+        offset=offset,
     )
-    return matches
+    return PaginatedResponse(items=items, total=total, limit=limit, offset=offset)
 
 
 @router.post(
@@ -61,30 +64,31 @@ async def like_user(
             detail="Cannot match with yourself",
         )
 
-    result = await process_match(
+    result = await MatchingService.process_like(
+        session=session,
         user=user,
         matched_user_id=matched_user_id,
-        session=session,
     )
     return result
 
 
 @router.get(
     "",
-    response_model=list[MatchResponse],
+    response_model=PaginatedResponse[MatchResponse],
     summary="Get user matches",
     description="Get all matches for the current user",
 )
 async def get_matches(
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     user: User = Depends(current_user),
     session: AsyncSession = Depends(db_helper.session_getter),
 ):
     """Get all matches for the current user."""
-    query = (
-        select(Match)
-        .where(Match.user_id == user.id)
-        .options(joinedload(Match.matched_user))
+    items, total = await MatchingService.get_user_matches(
+        session=session,
+        user_id=user.id,
+        limit=limit,
+        offset=offset,
     )
-    result = await session.execute(query)
-    matches = result.scalars().all()
-    return matches
+    return PaginatedResponse(items=items, total=total, limit=limit, offset=offset)

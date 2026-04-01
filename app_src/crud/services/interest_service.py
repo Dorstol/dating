@@ -62,21 +62,15 @@ class InterestService:
 
     @staticmethod
     async def get_popular_interests(
-        session: AsyncSession, limit: int = 20
-    ) -> list[Interest]:
-        """
-        Get popular interests based on user count.
-
-        Args:
-            session: Database session
-            limit: Maximum number of interests to return
-
-        Returns:
-            List of Interest objects ordered by popularity
-        """
+        session: AsyncSession, limit: int = 20, offset: int = 0
+    ) -> tuple[list[Interest], int]:
+        """Get popular interests based on user count with total count."""
         from core.models import user_interests
 
-        # TODO: Add caching for better performance
+        total_result = await session.execute(
+            select(func.count()).select_from(Interest)
+        )
+        total = total_result.scalar() or 0
 
         result = await session.execute(
             select(Interest)
@@ -84,30 +78,29 @@ class InterestService:
             .group_by(Interest.id)
             .order_by(func.count(user_interests.c.user_id).desc())
             .limit(limit)
+            .offset(offset)
         )
-        return result.scalars().all()
+        return list(result.scalars().all()), total
 
     @staticmethod
     async def search_interests(
-        session: AsyncSession, query: str, limit: int = 10
-    ) -> list[Interest]:
-        """
-        Search interests by name using case-insensitive partial matching.
+        session: AsyncSession, query: str, limit: int = 10, offset: int = 0
+    ) -> tuple[list[Interest], int]:
+        """Search interests by name with total count."""
+        filter_cond = func.lower(Interest.name).contains(query.lower())
 
-        Args:
-            session: Database session
-            query: Search query string
-            limit: Maximum number of results to return
+        total_result = await session.execute(
+            select(func.count()).select_from(Interest).where(filter_cond)
+        )
+        total = total_result.scalar() or 0
 
-        Returns:
-            List of matching Interest objects
-        """
         result = await session.execute(
             select(Interest)
-            .where(func.lower(Interest.name).contains(query.lower()))
+            .where(filter_cond)
             .limit(limit)
+            .offset(offset)
         )
-        return result.scalars().all()
+        return list(result.scalars().all()), total
 
     @staticmethod
     async def update_user_interests(
