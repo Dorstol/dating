@@ -68,6 +68,14 @@ class DatabaseConfig(BaseModel):
     }
 
 
+class RateLimitConfig(BaseModel):
+    default: str = "60/minute"
+    auth_login: str = "5/minute"
+    auth_register: str = "3/hour"
+    like: str = "30/minute"
+    suggestion: str = "20/minute"
+
+
 class AccessToken(BaseModel):
     lifetime_seconds: int = 3600
     reset_password_token_secret: str
@@ -87,6 +95,7 @@ class Settings(BaseSettings):
     api: ApiPrefix = ApiPrefix()
     db: DatabaseConfig
     access_token: AccessToken
+    rate_limit: RateLimitConfig = RateLimitConfig()
     SECRET_KEY: str = os.getenv("SECRET_KEY", "secret")
     REDIS_URL: str = "redis://localhost:6379"
 

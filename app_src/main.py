@@ -5,8 +5,15 @@ import uvicorn
 from create_fastapi_app import create_app
 from fastapi import Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from limits import parse
+from limits.storage import storage_from_string
+from limits.strategies import FixedWindowRateLimiter
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
+from slowapi import Limiter
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from api import router as api_router
 from core.config import settings
@@ -16,9 +23,25 @@ logging.basicConfig(
     format=settings.logging.log_format,
 )
 
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=[settings.rate_limit.default],
+    storage_uri=settings.REDIS_URL,
+)
+
 main_app = create_app(
     create_custom_static_urls=True,
 )
+
+main_app.state.limiter = limiter
+
+
+@main_app.exception_handler(RateLimitExceeded)
+async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": f"Rate limit exceeded: {exc.detail}"},
+    )
 
 REQUEST_COUNT = Counter(
     "fastapi_requests_total",
@@ -40,6 +63,35 @@ main_app.mount(
 main_app.include_router(
     api_router,
 )
+
+
+# Rate limits for auto-generated auth routes (fastapi-users)
+# Using limits library directly since slowapi decorators can't be applied
+# to fastapi-users generated endpoints.
+_auth_storage = storage_from_string(settings.REDIS_URL)
+_auth_limiter = FixedWindowRateLimiter(_auth_storage)
+AUTH_RATE_LIMITS = {
+    "/api/v1/auth/login": parse(settings.rate_limit.auth_login),
+    "/api/v1/auth/register": parse(settings.rate_limit.auth_register),
+}
+
+
+@main_app.middleware("http")
+async def auth_rate_limit_middleware(request: Request, call_next):
+    """Apply rate limits to fastapi-users generated auth endpoints."""
+    if request.method == "POST":
+        parsed_limit = AUTH_RATE_LIMITS.get(request.url.path)
+        if parsed_limit:
+            client_ip = get_remote_address(request)
+            key = f"{request.url.path}:{client_ip}"
+            if not _auth_limiter.hit(parsed_limit, key):
+                return JSONResponse(
+                    status_code=429,
+                    content={
+                        "detail": f"Rate limit exceeded: {parsed_limit}"
+                    },
+                )
+    return await call_next(request)
 
 
 @main_app.middleware("http")

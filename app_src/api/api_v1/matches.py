@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
@@ -10,6 +12,8 @@ from core.schemas.user import UserRead
 from crud.services.matches_service import find_matches, process_match
 
 from .fastapi_users import current_user
+
+limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter(
     prefix=settings.api.v1.matches,
@@ -23,7 +27,9 @@ router = APIRouter(
     summary="Get match suggestions",
     description="Get a list of potential matches for the current user based on interests and ratings",
 )
+@limiter.limit(settings.rate_limit.suggestion)
 async def suggest_matches(
+    request: Request,
     user: User = Depends(current_user),
     session: AsyncSession = Depends(db_helper.session_getter),
 ):
@@ -41,7 +47,9 @@ async def suggest_matches(
     summary="Like a user",
     description="Like another user and potentially create a match if mutual",
 )
+@limiter.limit(settings.rate_limit.like)
 async def like_user(
+    request: Request,
     matched_user_id: int,
     user: User = Depends(current_user),
     session: AsyncSession = Depends(db_helper.session_getter),
