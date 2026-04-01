@@ -26,8 +26,7 @@ class User(Base, IntIdPkMixin, SQLAlchemyBaseUserTable[UserIdType]):
     last_name: Mapped[str] = mapped_column(nullable=False)
     gender: Mapped[GenderEnum] = mapped_column(
         Enum(GenderEnum),
-        nullable=True,
-        default=GenderEnum.OTHER,
+        nullable=False,
     )
     photo: Mapped[str] = mapped_column(
         String(255),
