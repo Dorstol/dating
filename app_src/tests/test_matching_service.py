@@ -1,190 +1,208 @@
-"""
-Tests for the MatchingService to ensure proper functionality of the
-interest-based matching and rating system.
-"""
+"""Unit tests for MatchingService business logic."""
+
+import sys
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from core.models import Interest, User
+from core.models import Interest, Match, User
 from core.models.enums import GenderEnum
 
+# Avoid circular import: matches_service imports from api.api_v1.fastapi_users
+# which triggers the full API router chain. Mock it before importing.
+sys.modules.setdefault("api.api_v1.fastapi_users", MagicMock())
 
-class TestMatchingService:
-    """Test suite for the MatchingService class."""
+from crud.services.matches_service import MatchingService  # noqa: E402
+
+
+class TestProcessLike:
+    @pytest.fixture
+    def session(self):
+        s = AsyncMock()
+        s.add = MagicMock()
+        return s
 
     @pytest.fixture
-    def sample_user(self):
-        """Create a sample user for testing."""
-        user = User(
+    def user(self, make_user):
+        return make_user(
             id=1,
-            email="test@example.com",
-            first_name="John",
-            last_name="Doe",
+            email="john@example.com",
             gender=GenderEnum.MALE,
-            age=25,
-            location="New York",
             rating=5,
-            is_active=True,
         )
-        # Mock interests
-        user.interests = [
-            Interest(id=1, name="Photography"),
-            Interest(id=2, name="Travel"),
-            Interest(id=3, name="Music"),
-        ]
-        return user
 
     @pytest.fixture
-    def potential_matches(self):
-        """Create potential match users with different ratings and interests."""
-        # High-rated user with common interests
-        user1 = User(
+    def other_user(self, make_user):
+        return make_user(
             id=2,
-            email="user1@example.com",
-            first_name="Alice",
-            last_name="Smith",
+            email="alice@example.com",
             gender=GenderEnum.FEMALE,
-            age=23,
-            location="New York",
-            rating=10,  # High rating
-            is_active=True,
+            rating=3,
         )
-        user1.interests = [
-            Interest(id=1, name="Photography"),  # Common
-            Interest(id=2, name="Travel"),  # Common
-            Interest(id=4, name="Cooking"),
-        ]
 
-        # Medium-rated user with some common interests
-        user2 = User(
-            id=3,
-            email="user2@example.com",
-            first_name="Emma",
-            last_name="Johnson",
-            gender=GenderEnum.FEMALE,
-            age=26,
-            location="Boston",
-            rating=7,  # Medium rating
-            is_active=True,
+    async def test_cannot_like_yourself(self, session, user):
+        with pytest.raises(ValueError, match="Cannot match with yourself"):
+            await MatchingService.process_like(session, user, user.id)
+
+    async def test_new_like_creates_match(self, session, user, other_user):
+        with (
+            patch.object(
+                MatchingService,
+                "_get_user_by_id",
+                return_value=other_user,
+            ),
+            patch.object(
+                MatchingService,
+                "_get_existing_match",
+                return_value=None,
+            ),
+        ):
+            result = await MatchingService.process_like(
+                session, user, other_user.id
+            )
+
+        assert result.user_id == user.id
+        assert result.matched_user_id == other_user.id
+        assert result.is_mutual is False
+        assert other_user.rating == 4  # incremented from 3
+        session.add.assert_called_once()
+        session.commit.assert_awaited_once()
+
+    async def test_mutual_like_sets_mutual_flag(
+        self, session, user, other_user
+    ):
+        existing = Match(
+            user_id=other_user.id,
+            matched_user_id=user.id,
+            is_mutual=False,
         )
-        user2.interests = [
-            Interest(id=1, name="Photography"),  # Common
-            Interest(id=5, name="Reading"),
-        ]
 
-        # Low-rated user with many common interests
-        user3 = User(
-            id=4,
-            email="user3@example.com",
-            first_name="Sarah",
-            last_name="Wilson",
-            gender=GenderEnum.FEMALE,
-            age=24,
-            location="Chicago",
-            rating=3,  # Low rating
-            is_active=True,
+        with (
+            patch.object(
+                MatchingService,
+                "_get_user_by_id",
+                return_value=other_user,
+            ),
+            patch.object(
+                MatchingService,
+                "_get_existing_match",
+                return_value=existing,
+            ),
+        ):
+            result = await MatchingService.process_like(
+                session, user, other_user.id
+            )
+
+        assert existing.is_mutual is True
+        assert result.is_mutual is True
+        assert user.rating == 6  # incremented from 5
+        assert other_user.rating == 4  # incremented from 3
+
+    async def test_duplicate_like_returns_existing(
+        self, session, user, other_user
+    ):
+        existing = Match(
+            user_id=user.id,
+            matched_user_id=other_user.id,
+            is_mutual=False,
         )
-        user3.interests = [
-            Interest(id=1, name="Photography"),  # Common
-            Interest(id=2, name="Travel"),  # Common
-            Interest(id=3, name="Music"),  # Common
-            Interest(id=6, name="Art"),
-        ]
 
-        return [user1, user2, user3]
+        with (
+            patch.object(
+                MatchingService,
+                "_get_user_by_id",
+                return_value=other_user,
+            ),
+            patch.object(
+                MatchingService,
+                "_get_existing_match",
+                return_value=existing,
+            ),
+        ):
+            result = await MatchingService.process_like(
+                session, user, other_user.id
+            )
 
-    async def test_find_matches_by_interests_and_rating_ordering(self):
-        """Test that matches are ordered by common interests first, then by rating."""
-        # This would be a full integration test
-        # For now, we'll just test the logic conceptually
+        assert result is existing
+        assert user.rating == 5  # unchanged
+        assert other_user.rating == 3  # unchanged
 
-        # Expected order based on our algorithm:
-        # 1. user3 (Sarah) - 3 common interests, rating 3
-        # 2. user1 (Alice) - 2 common interests, rating 10
-        # 3. user2 (Emma) - 1 common interest, rating 7
+    async def test_like_nonexistent_user_raises(self, session, user):
+        with patch.object(
+            MatchingService,
+            "_get_user_by_id",
+            side_effect=ValueError("User with ID 999 not found"),
+        ):
+            with pytest.raises(ValueError, match="not found"):
+                await MatchingService.process_like(session, user, 999)
 
-        # The algorithm prioritizes:
-        # 1. Number of common interests (descending)
-        # 2. Rating (descending)
-        # 3. Creation date (descending)
+    async def test_new_like_increments_only_matched_user_rating(
+        self, session, user, other_user
+    ):
+        initial_user_rating = user.rating
+        initial_other_rating = other_user.rating
 
-        assert True  # Placeholder for actual test implementation
+        with (
+            patch.object(
+                MatchingService,
+                "_get_user_by_id",
+                return_value=other_user,
+            ),
+            patch.object(
+                MatchingService,
+                "_get_existing_match",
+                return_value=None,
+            ),
+        ):
+            await MatchingService.process_like(session, user, other_user.id)
 
-    async def test_process_like_increments_rating(self):
-        """Test that processing a like increments the liked user's rating."""
-        # This would test the rating increment logic
-        # when a user receives a like
-
-        assert True  # Placeholder for actual test implementation
-
-    async def test_mutual_match_increments_both_ratings(self):
-        """Test that mutual matches increment both users' ratings."""
-        # This would test that when a match becomes mutual,
-        # both users get their ratings incremented
-
-        assert True  # Placeholder for actual test implementation
-
-    async def test_rating_never_goes_below_zero(self):
-        """Test that user rating never goes below 0."""
-        user = User(rating=0)
-        user.decrement_rating()
-        assert user.rating == 0
-
-    async def test_rating_increments_correctly(self):
-        """Test that rating increments work correctly."""
-        user = User(rating=5)
-        user.increment_rating()
-        assert user.rating == 6
-
-    async def test_fallback_to_basic_matching_when_no_interests(self):
-        """Test that users without interests get basic matching."""
-        # This would test the fallback mechanism when a user
-        # has no interests defined
-
-        assert True  # Placeholder for actual test implementation
+        assert user.rating == initial_user_rating  # unchanged
+        assert other_user.rating == initial_other_rating + 1
 
 
-# Example usage and demonstration
-async def demonstrate_matching_algorithm():
-    """
-    Demonstration of how the new matching algorithm works.
+class TestGetExistingMatch:
+    async def test_finds_match_either_direction(self):
+        session = AsyncMock()
+        mock_result = MagicMock()
+        mock_scalars = MagicMock()
+        mock_scalars.first.return_value = Match(
+            user_id=1, matched_user_id=2, is_mutual=False
+        )
+        mock_result.scalars.return_value = mock_scalars
+        session.execute.return_value = mock_result
 
-    This function shows the expected behavior of the matching system:
-    1. Users with more common interests are prioritized
-    2. Among users with the same number of common interests, higher-rated users come first
-    3. The system falls back to basic rating-based matching if needed
-    """
-    print("=== Matching Algorithm Demonstration ===")
-    print()
-    print("User Profile:")
-    print("- John Doe (Male, Rating: 5)")
-    print("- Interests: Photography, Travel, Music")
-    print()
-    print("Potential Matches:")
-    print("1. Sarah Wilson (Female, Rating: 3)")
-    print("   - Interests: Photography, Travel, Music, Art")
-    print("   - Common interests: 3 (Photography, Travel, Music)")
-    print()
-    print("2. Alice Smith (Female, Rating: 10)")
-    print("   - Interests: Photography, Travel, Cooking")
-    print("   - Common interests: 2 (Photography, Travel)")
-    print()
-    print("3. Emma Johnson (Female, Rating: 7)")
-    print("   - Interests: Photography, Reading")
-    print("   - Common interests: 1 (Photography)")
-    print()
-    print("Expected Match Order:")
-    print("1. Sarah Wilson (3 common interests, rating 3)")
-    print("2. Alice Smith (2 common interests, rating 10)")
-    print("3. Emma Johnson (1 common interest, rating 7)")
-    print()
-    print("Algorithm Logic:")
-    print("- Primary sort: Number of common interests (descending)")
-    print("- Secondary sort: User rating (descending)")
-    print("- Tertiary sort: Account creation date (descending)")
+        result = await MatchingService._get_existing_match(session, 1, 2)
+        assert result is not None
+        session.execute.assert_awaited_once()
+
+    async def test_returns_none_when_no_match(self):
+        session = AsyncMock()
+        mock_result = MagicMock()
+        mock_scalars = MagicMock()
+        mock_scalars.first.return_value = None
+        mock_result.scalars.return_value = mock_scalars
+        session.execute.return_value = mock_result
+
+        result = await MatchingService._get_existing_match(session, 1, 2)
+        assert result is None
 
 
-if __name__ == "__main__":
-    import asyncio
+class TestGetUserById:
+    async def test_returns_user_when_found(self):
+        session = AsyncMock()
+        user = User(id=1, email="a@b.com", hashed_password="x")
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = user
+        session.execute.return_value = mock_result
 
-    asyncio.run(demonstrate_matching_algorithm())
+        result = await MatchingService._get_user_by_id(session, 1)
+        assert result is user
+
+    async def test_raises_when_not_found(self):
+        session = AsyncMock()
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        session.execute.return_value = mock_result
+
+        with pytest.raises(ValueError, match="not found"):
+            await MatchingService._get_user_by_id(session, 999)
