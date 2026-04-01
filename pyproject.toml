@@ -18,6 +18,7 @@ dependencies = [
     "fastapi-users-db-sqlalchemy>=6.0.1,<7",
     "pillow>=11.1.0,<12",
     "prometheus-client>=0.21.1",
+    "slowapi>=0.1.9,<1",
 ]
 
 [dependency-groups]
