@@ -13,6 +13,7 @@ from core.models.enums import GenderEnum
 sys.modules.setdefault("api.api_v1.fastapi_users", MagicMock())
 
 from crud.services.block_report_service import BlockReportService  # noqa: E402
+from crud.services.cache_service import CacheService  # noqa: E402
 from crud.services.matches_service import MatchingService  # noqa: E402
 
 
@@ -62,6 +63,11 @@ class TestProcessLike:
                 "_get_existing_match",
                 return_value=None,
             ),
+            patch.object(
+                CacheService,
+                "invalidate_suggestions",
+                new_callable=AsyncMock,
+            ),
         ):
             result = await MatchingService.process_like(
                 session, user, other_user.id
@@ -98,6 +104,11 @@ class TestProcessLike:
                 MatchingService,
                 "_get_existing_match",
                 return_value=existing,
+            ),
+            patch.object(
+                CacheService,
+                "invalidate_suggestions",
+                new_callable=AsyncMock,
             ),
         ):
             result = await MatchingService.process_like(
@@ -180,6 +191,11 @@ class TestProcessLike:
                 MatchingService,
                 "_get_existing_match",
                 return_value=None,
+            ),
+            patch.object(
+                CacheService,
+                "invalidate_suggestions",
+                new_callable=AsyncMock,
             ),
         ):
             await MatchingService.process_like(session, user, other_user.id)

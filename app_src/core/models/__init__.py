@@ -3,6 +3,7 @@ __all__ = (
     "Base",
     "User",
     "Match",
+    "Message",
     "Block",
     "Report",
     "AccessToken",
@@ -20,5 +21,6 @@ from .db_helper import db_helper
 from .enums import GenderEnum, ReportReasonEnum
 from .interest import Interest
 from .match import Match
+from .message import Message
 from .report import Report
 from .user import User
