@@ -19,6 +19,7 @@ dependencies = [
     "pillow>=11.1.0,<12",
     "prometheus-client>=0.21.1",
     "slowapi>=0.1.9,<1",
+    "aiogram>=3.26.0",
 ]
 
 [dependency-groups]

@@ -73,5 +73,16 @@ services:
       - pg
       - redis
 
+  bot:
+    build:
+      context: .
+      dockerfile: bot/Dockerfile
+    container_name: dating_bot
+    environment:
+      BOT_TOKEN: ${BOT_TOKEN}
+      WEBAPP_URL: ${WEBAPP_URL:-https://dev.dorstol.tech}
+    depends_on:
+      - api
+
 volumes:
   photos:
