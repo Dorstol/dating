@@ -106,6 +106,7 @@ class Settings(BaseSettings):
     rate_limit: RateLimitConfig = RateLimitConfig()
     SECRET_KEY: str = os.getenv("SECRET_KEY", "secret")
     REDIS_URL: str = "redis://localhost:6379"
+    BOT_TOKEN: str = ""
 
 
 settings = Settings()
