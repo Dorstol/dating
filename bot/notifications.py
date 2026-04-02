@@ -44,9 +44,9 @@ class NotificationListener:
 
     def _is_throttled(self, telegram_id: int, event_type: str) -> bool:
         key = (telegram_id, event_type)
-        last = self._throttle.get(key, 0)
         now = time.monotonic()
-        if now - last < THROTTLE_TTL:
+        last = self._throttle.get(key)
+        if last is not None and now - last < THROTTLE_TTL:
             return True
         self._throttle[key] = now
         return False
