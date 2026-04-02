@@ -14,9 +14,7 @@ if TYPE_CHECKING:
 
 
 class Block(Base, IntIdPkMixin):
-    __table_args__ = (
-        UniqueConstraint("user_id", "blocked_user_id"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "blocked_user_id"),)
 
     user_id: Mapped[UserIdType] = mapped_column(
         ForeignKey(

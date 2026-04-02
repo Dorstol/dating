@@ -18,9 +18,7 @@ class BlockReportService:
             raise ValueError("Cannot block yourself")
 
         # Check if already blocked
-        existing = await BlockReportService.get_block(
-            session, user_id, blocked_user_id
-        )
+        existing = await BlockReportService.get_block(session, user_id, blocked_user_id)
         if existing:
             raise ValueError("User is already blocked")
 
@@ -34,9 +32,7 @@ class BlockReportService:
         session: AsyncSession, user_id: UserIdType, blocked_user_id: UserIdType
     ) -> None:
         """Unblock a user."""
-        block = await BlockReportService.get_block(
-            session, user_id, blocked_user_id
-        )
+        block = await BlockReportService.get_block(session, user_id, blocked_user_id)
         if not block:
             raise ValueError("User is not blocked")
 
@@ -63,9 +59,7 @@ class BlockReportService:
         session: AsyncSession, user_id: UserIdType
     ) -> list[Block]:
         """Get all blocked users for a user."""
-        result = await session.execute(
-            select(Block).where(Block.user_id == user_id)
-        )
+        result = await session.execute(select(Block).where(Block.user_id == user_id))
         return list(result.scalars().all())
 
     @staticmethod

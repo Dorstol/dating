@@ -17,9 +17,7 @@ class ChatService:
 
         Raises ValueError if validation fails.
         """
-        result = await session.execute(
-            select(Match).where(Match.id == match_id)
-        )
+        result = await session.execute(select(Match).where(Match.id == match_id))
         match = result.scalar_one_or_none()
 
         if match is None:

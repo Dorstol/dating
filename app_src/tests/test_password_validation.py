@@ -4,7 +4,6 @@ import pytest
 from fastapi import HTTPException
 
 from core.authentication.user_manager import UserManager
-from core.models import User
 
 
 class TestPasswordValidation:
@@ -55,9 +54,7 @@ class TestPasswordValidation:
 
     async def test_contains_email(self, user_manager, user):
         with pytest.raises(HTTPException, match="email"):
-            await user_manager.validate_password(
-                "test@example.comAbc1", user
-            )
+            await user_manager.validate_password("test@example.comAbc1", user)
 
     async def test_blacklisted_password(self, user_manager, user):
         with pytest.raises(HTTPException, match="too weak"):

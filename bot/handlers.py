@@ -18,7 +18,6 @@ async def cmd_start(message: Message) -> None:
     )
 
     await message.answer(
-        "Welcome to Dating App!\n\n"
-        "Tap the button below to open the app.",
+        "Welcome to Dating App!\n\nTap the button below to open the app.",
         reply_markup=builder.as_markup(),
     )

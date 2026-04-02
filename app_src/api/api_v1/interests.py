@@ -27,9 +27,7 @@ async def get_popular_interests(
     session: AsyncSession = Depends(db_helper.session_getter),
 ):
     """Получить популярные интересы"""
-    items, total = await InterestService.get_popular_interests(
-        session, limit, offset
-    )
+    items, total = await InterestService.get_popular_interests(session, limit, offset)
     return PaginatedResponse(items=items, total=total, limit=limit, offset=offset)
 
 
@@ -41,9 +39,7 @@ async def search_interests(
     session: AsyncSession = Depends(db_helper.session_getter),
 ):
     """Поиск интересов по названию"""
-    items, total = await InterestService.search_interests(
-        session, q, limit, offset
-    )
+    items, total = await InterestService.search_interests(session, q, limit, offset)
     return PaginatedResponse(items=items, total=total, limit=limit, offset=offset)
 
 

@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from core.models import Block, Report
+from core.models import Block
 from core.models.enums import ReportReasonEnum
 from crud.services.block_report_service import BlockReportService
 
@@ -120,9 +120,7 @@ class TestReportUser:
 
     async def test_cannot_report_yourself(self, session):
         with pytest.raises(ValueError, match="Cannot report yourself"):
-            await BlockReportService.report_user(
-                session, 1, 1, ReportReasonEnum.SPAM
-            )
+            await BlockReportService.report_user(session, 1, 1, ReportReasonEnum.SPAM)
 
     async def test_report_creates_record(self, session):
         result = await BlockReportService.report_user(
