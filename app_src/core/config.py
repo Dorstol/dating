@@ -38,6 +38,7 @@ class ApiV1Prefix(BaseModel):
     users: str = "/users"
     matches: str = "/matches"
     interests: str = "/interests"
+    chat: str = "/chat"
 
 
 class ApiPrefix(BaseModel):

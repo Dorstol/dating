@@ -18,6 +18,7 @@ from slowapi.util import get_remote_address
 from api import router as api_router
 from core.config import settings
 from crud.services.cache_service import CacheService
+from crud.services.connection_manager import manager as ws_manager
 
 logging.basicConfig(
     level=logging.INFO,
@@ -67,8 +68,9 @@ main_app.include_router(
 
 
 @main_app.on_event("shutdown")
-async def shutdown_redis():
+async def shutdown_services():
     await CacheService.close()
+    await ws_manager.close()
 
 
 # Rate limits for auto-generated auth routes (fastapi-users)
