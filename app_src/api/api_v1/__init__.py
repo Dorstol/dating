@@ -5,6 +5,7 @@ from core.config import settings
 
 from .auth import router as auth_router
 from .chat import router as chat_router
+from .chat import ws_router as chat_ws_router
 from .interests import router as interest_router
 from .matches import router as match_router
 from .users import router as user_router

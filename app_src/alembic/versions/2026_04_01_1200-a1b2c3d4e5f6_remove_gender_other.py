@@ -20,12 +20,9 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     # Remove users with gender 'Other' or set them to a default
     # before altering the enum (adjust as needed for your data)
-    op.execute("UPDATE users SET gender = 'Male' WHERE gender = 'Other'")
-
-    # Alter enum: drop OTHER value
-    # PostgreSQL doesn't support removing enum values directly,
-    # so we recreate the enum type.
+    # Convert to VARCHAR first so we can safely update values
     op.execute("ALTER TABLE users ALTER COLUMN gender TYPE VARCHAR")
+    op.execute("UPDATE users SET gender = 'Male' WHERE gender = 'Other'")
     op.execute("DROP TYPE IF EXISTS genderenum")
     op.execute("CREATE TYPE genderenum AS ENUM ('Male', 'Female')")
     op.execute(

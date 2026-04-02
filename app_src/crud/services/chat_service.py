@@ -93,6 +93,7 @@ class ChatService:
                     Message.is_read.is_(False),
                 )
             )
+            .values(is_read=True)
             .returning(Message.id)
         )
         await session.commit()

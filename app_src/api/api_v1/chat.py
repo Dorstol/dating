@@ -18,6 +18,11 @@ router = APIRouter(
     tags=["Chat"],
 )
 
+# Separate router for WebSocket (no HTTPBearer dependency)
+ws_router = APIRouter(
+    prefix=settings.api.v1.chat,
+)
+
 
 class MessageOut(BaseModel):
     id: int
@@ -54,7 +59,7 @@ async def _get_user_by_token(
     return result.scalar_one_or_none()
 
 
-@router.websocket("/ws/{match_id}")
+@ws_router.websocket("/ws/{match_id}")
 async def websocket_chat(
     websocket: WebSocket,
     match_id: int,

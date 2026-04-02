@@ -16,6 +16,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 from api import router as api_router
+from api import ws_router as api_ws_router
 from core.config import settings
 from crud.services.cache_service import CacheService
 from crud.services.connection_manager import manager as ws_manager
@@ -64,6 +65,10 @@ main_app.mount(
 
 main_app.include_router(
     api_router,
+)
+
+main_app.include_router(
+    api_ws_router,
 )
 
 
