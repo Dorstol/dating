@@ -12,6 +12,7 @@ from core.models.enums import GenderEnum
 # which triggers the full API router chain. Mock it before importing.
 sys.modules.setdefault("api.api_v1.fastapi_users", MagicMock())
 
+from crud.services.block_report_service import BlockReportService  # noqa: E402
 from crud.services.matches_service import MatchingService  # noqa: E402
 
 
@@ -47,6 +48,11 @@ class TestProcessLike:
     async def test_new_like_creates_match(self, session, user, other_user):
         with (
             patch.object(
+                BlockReportService,
+                "get_blocked_user_ids",
+                return_value=[],
+            ),
+            patch.object(
                 MatchingService,
                 "_get_user_by_id",
                 return_value=other_user,
@@ -79,6 +85,11 @@ class TestProcessLike:
 
         with (
             patch.object(
+                BlockReportService,
+                "get_blocked_user_ids",
+                return_value=[],
+            ),
+            patch.object(
                 MatchingService,
                 "_get_user_by_id",
                 return_value=other_user,
@@ -109,6 +120,11 @@ class TestProcessLike:
 
         with (
             patch.object(
+                BlockReportService,
+                "get_blocked_user_ids",
+                return_value=[],
+            ),
+            patch.object(
                 MatchingService,
                 "_get_user_by_id",
                 return_value=other_user,
@@ -128,10 +144,17 @@ class TestProcessLike:
         assert other_user.rating == 3  # unchanged
 
     async def test_like_nonexistent_user_raises(self, session, user):
-        with patch.object(
-            MatchingService,
-            "_get_user_by_id",
-            side_effect=ValueError("User with ID 999 not found"),
+        with (
+            patch.object(
+                BlockReportService,
+                "get_blocked_user_ids",
+                return_value=[],
+            ),
+            patch.object(
+                MatchingService,
+                "_get_user_by_id",
+                side_effect=ValueError("User with ID 999 not found"),
+            ),
         ):
             with pytest.raises(ValueError, match="not found"):
                 await MatchingService.process_like(session, user, 999)
@@ -143,6 +166,11 @@ class TestProcessLike:
         initial_other_rating = other_user.rating
 
         with (
+            patch.object(
+                BlockReportService,
+                "get_blocked_user_ids",
+                return_value=[],
+            ),
             patch.object(
                 MatchingService,
                 "_get_user_by_id",
