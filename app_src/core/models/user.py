@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTable, SQLAlchemyUserDatabase
-from sqlalchemy import Enum, Integer, String, func
+from sqlalchemy import BigInteger, Enum, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.types.user_id import UserIdType
@@ -24,17 +24,23 @@ class User(Base, IntIdPkMixin, SQLAlchemyBaseUserTable[UserIdType]):
     )
     first_name: Mapped[str] = mapped_column(nullable=False)
     last_name: Mapped[str] = mapped_column(nullable=False)
-    gender: Mapped[GenderEnum] = mapped_column(
+    gender: Mapped[GenderEnum | None] = mapped_column(
         Enum(GenderEnum),
-        nullable=False,
+        nullable=True,
     )
     photo: Mapped[str] = mapped_column(
         String(255),
         nullable=True,
     )
-    location: Mapped[str] = mapped_column(nullable=False)
-    age: Mapped[int] = mapped_column(nullable=False)
+    location: Mapped[str | None] = mapped_column(nullable=True)
+    age: Mapped[int | None] = mapped_column(nullable=True)
     bio: Mapped[str] = mapped_column(nullable=True)
+
+    telegram_id: Mapped[int | None] = mapped_column(
+        BigInteger,
+        unique=True,
+        nullable=True,
+    )
 
     rating: Mapped[int] = mapped_column(
         Integer,

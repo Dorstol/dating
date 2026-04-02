@@ -112,6 +112,7 @@ class Settings(BaseSettings):
     cache: CacheConfig = CacheConfig()
     SECRET_KEY: str = os.getenv("SECRET_KEY", "secret")
     REDIS_URL: str = "redis://localhost:6379"
+    BOT_TOKEN: str = ""
 
 
 settings = Settings()
