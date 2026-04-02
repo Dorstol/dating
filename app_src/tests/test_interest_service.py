@@ -60,9 +60,7 @@ class TestGetOrCreateInterests:
         self._mock_existing(session, [])
         session.add = MagicMock()
 
-        await InterestService.get_or_create_interests(
-            session, ["Music", "music"]
-        )
+        await InterestService.get_or_create_interests(session, ["Music", "music"])
         # Only one should be created despite different cases
         assert session.add.call_count == 1
 
