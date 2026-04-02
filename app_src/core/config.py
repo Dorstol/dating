@@ -83,6 +83,11 @@ class CorsConfig(BaseModel):
     allow_headers: list[str] = ["*"]
 
 
+class CacheConfig(BaseModel):
+    suggestions_ttl: int = 300  # 5 minutes
+    prefix: str = "dating"
+
+
 class AccessToken(BaseModel):
     lifetime_seconds: int = 3600
     reset_password_token_secret: str
@@ -104,6 +109,7 @@ class Settings(BaseSettings):
     access_token: AccessToken
     cors: CorsConfig = CorsConfig()
     rate_limit: RateLimitConfig = RateLimitConfig()
+    cache: CacheConfig = CacheConfig()
     SECRET_KEY: str = os.getenv("SECRET_KEY", "secret")
     REDIS_URL: str = "redis://localhost:6379"
 

@@ -8,6 +8,7 @@ from core.models import User, db_helper
 from core.schemas.match import MatchResponse
 from core.schemas.pagination import PaginatedResponse
 from core.schemas.user import UserRead
+from crud.services.cache_service import CacheService
 from crud.services.matches_service import MatchingService
 
 from .fastapi_users import current_user
@@ -35,13 +36,23 @@ async def suggest_matches(
     session: AsyncSession = Depends(db_helper.session_getter),
 ):
     """Get potential matches for the current user."""
+    cached = await CacheService.get_json("suggestions", user.id, limit, offset)
+    if cached is not None:
+        return cached
+
     items, total = await MatchingService.find_matches_by_interests_and_rating(
         session=session,
         user=user,
         limit=limit,
         offset=offset,
     )
-    return PaginatedResponse(items=items, total=total, limit=limit, offset=offset)
+    response = PaginatedResponse(items=items, total=total, limit=limit, offset=offset)
+    await CacheService.set_json(
+        response.model_dump(mode="json"),
+        "suggestions", user.id, limit, offset,
+        ttl=settings.cache.suggestions_ttl,
+    )
+    return response
 
 
 @router.post(
