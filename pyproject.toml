@@ -29,6 +29,7 @@ dev = [
     "ruff>=0.4.0,<1",
     "pytest>=8.0.0,<9",
     "pytest-asyncio>=0.23.0,<1",
+    "mypy>=1.10.0,<2",
 ]
 
 [tool.uv]
@@ -62,6 +63,7 @@ select = [
 ignore = [
     "E501",  # line too long, handled by black
     "B008",  # do not perform function calls in argument defaults
+    "UP046", # Generic subclass vs type parameters (Python 3.12+)
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -69,6 +71,12 @@ ignore = [
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["app_src/tests"]
-pythonpath = ["app_src"]
+testpaths = ["app_src/tests", "bot/tests"]
+pythonpath = ["app_src", "."]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
 

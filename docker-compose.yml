@@ -81,8 +81,10 @@ services:
     environment:
       BOT_TOKEN: ${BOT_TOKEN}
       WEBAPP_URL: ${WEBAPP_URL:-https://dev.dorstol.tech}
+      REDIS_URL: redis://redis:6379
     depends_on:
       - api
+      - redis
 
 volumes:
   photos:
