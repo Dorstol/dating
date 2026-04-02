@@ -1,10 +1,65 @@
 <script setup>
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import api from '../api/client'
+
+const router = useRouter()
+const matches = ref([])
+const loading = ref(true)
+
+onMounted(async () => {
+  try {
+    const { data } = await api.get('/matches')
+    matches.value = data.items
+  } catch (e) {
+    console.error('Failed to load matches', e)
+  } finally {
+    loading.value = false
+  }
+})
+
+function openChat(match) {
+  router.push({ name: 'Chat', params: { matchId: match.id } })
+}
 </script>
 
 <template>
   <div class="matches">
     <h2>Matches</h2>
-    <p class="placeholder">Match list will appear here (Step 5)</p>
+
+    <div v-if="loading" class="status">Loading...</div>
+
+    <div v-else-if="!matches.length" class="status">
+      <p>No matches yet</p>
+      <p class="hint">Start swiping to find someone!</p>
+    </div>
+
+    <div v-else class="match-list">
+      <div
+        v-for="match in matches"
+        :key="match.id"
+        class="match-item"
+        @click="openChat(match)"
+      >
+        <div class="avatar">
+          <img
+            v-if="match.matched_user?.photo"
+            :src="`/static/photos/${match.matched_user.photo}`"
+            :alt="match.matched_user.first_name"
+          />
+          <span v-else>{{ match.matched_user?.first_name?.[0] || '?' }}</span>
+        </div>
+        <div class="match-info">
+          <p class="match-name">
+            {{ match.matched_user?.first_name }}
+            {{ match.matched_user?.last_name }}
+          </p>
+          <p class="match-status" :class="{ mutual: match.is_mutual }">
+            {{ match.is_mutual ? 'Mutual match' : 'Liked' }}
+          </p>
+        </div>
+      </div>
+    </div>
 
     <nav class="bottom-nav">
       <router-link to="/" class="nav-item">Discover</router-link>
@@ -20,10 +75,66 @@
   padding-bottom: 72px;
 }
 
-.placeholder {
+.status {
   text-align: center;
   color: #999;
-  margin-top: 120px;
+  margin-top: 80px;
+}
+
+.hint {
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.match-list {
+  margin-top: 12px;
+}
+
+.match-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.match-item:hover {
+  background: #f9f9f9;
+}
+
+.avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #f0e6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  font-size: 20px;
+  color: #7c3aed;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.match-name {
+  font-weight: 600;
+}
+
+.match-status {
+  font-size: 13px;
+  color: #999;
+}
+
+.match-status.mutual {
+  color: #7c3aed;
 }
 
 .bottom-nav {
