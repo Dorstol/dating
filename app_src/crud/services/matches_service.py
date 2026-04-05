@@ -1,11 +1,12 @@
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.models import Block, Match, User
+from core.models import Match, User
 from core.models.associations import user_interests
 from core.types.user_id import UserIdType
 from crud.services.cache_service import CacheService
 from crud.services.block_report_service import BlockReportService
+from crud.services.notification_service import NotificationService
 
 
 class MatchingService:
@@ -25,9 +26,7 @@ class MatchingService:
             Tuple of (matched users list, total count).
         """
         # Получаем ID заблокированных пользователей (в обе стороны)
-        blocked_ids = await BlockReportService.get_blocked_user_ids(
-            session, user.id
-        )
+        blocked_ids = await BlockReportService.get_blocked_user_ids(session, user.id)
 
         base_filter = and_(
             User.gender != user.gender,
@@ -62,9 +61,7 @@ class MatchingService:
             )
             .group_by(User.id)
             .order_by(
-                func.count(
-                    user_interests.c.interest_id
-                ).desc(),
+                func.count(user_interests.c.interest_id).desc(),
                 User.rating.desc(),
                 User.created_at.desc(),
             )
@@ -81,7 +78,10 @@ class MatchingService:
             matched_user_ids = [u.id for u in matched_users]
 
             basic_matches = await MatchingService._find_basic_matches(
-                session, user, remaining_limit, exclude_ids=matched_user_ids,
+                session,
+                user,
+                remaining_limit,
+                exclude_ids=matched_user_ids,
                 blocked_ids=blocked_ids,
             )
             matched_users.extend(basic_matches)
@@ -110,10 +110,14 @@ class MatchingService:
         if blocked_ids:
             query = query.where(User.id.notin_(blocked_ids))
 
-        query = query.order_by(
-            User.rating.desc(),
-            User.created_at.desc(),
-        ).limit(limit).offset(offset)
+        query = (
+            query.order_by(
+                User.rating.desc(),
+                User.created_at.desc(),
+            )
+            .limit(limit)
+            .offset(offset)
+        )
 
         result = await session.execute(query)
         return list(result.scalars().all())
@@ -166,9 +170,7 @@ class MatchingService:
             raise ValueError("Cannot match with yourself")
 
         # Проверяем блокировку в обе стороны
-        blocked_ids = await BlockReportService.get_blocked_user_ids(
-            session, user.id
-        )
+        blocked_ids = await BlockReportService.get_blocked_user_ids(session, user.id)
         if matched_user_id in blocked_ids:
             raise ValueError("Cannot like a blocked user")
 
@@ -212,6 +214,17 @@ class MatchingService:
 
             await CacheService.invalidate_suggestions(user.id)
             await CacheService.invalidate_suggestions(matched_user.id)
+
+            # Notify both users about mutual match
+            await NotificationService.notify_mutual_match(
+                user.telegram_id,
+                matched_user.first_name,
+            )
+            await NotificationService.notify_mutual_match(
+                matched_user.telegram_id,
+                user.first_name,
+            )
+
             return reverse_match
         else:
             # We already liked this user
@@ -237,7 +250,6 @@ class MatchingService:
         await CacheService.invalidate_suggestions(user.id)
         await CacheService.invalidate_suggestions(matched_user.id)
         return new_match
-
 
     @staticmethod
     async def get_user_matches(

@@ -1,13 +1,23 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from sqlalchemy import select
 
 from core.config import settings
 from core.models import User, db_helper
 from crud.services.chat_service import ChatService
 from crud.services.connection_manager import manager
+from crud.services.notification_service import NotificationService
 
 from .fastapi_users import current_user
 
@@ -53,9 +63,7 @@ async def _get_user_by_token(
     if access_token is None:
         return None
 
-    result = await session.execute(
-        select(User).where(User.id == access_token.user_id)
-    )
+    result = await session.execute(select(User).where(User.id == access_token.user_id))
     return result.scalar_one_or_none()
 
 
@@ -85,6 +93,18 @@ async def websocket_chat(
             await websocket.close(code=4003, reason=str(e))
             return
 
+        # Determine the other participant for notifications
+        if match.user_id == user.id:
+            recipient_id = match.matched_user_id
+        else:
+            recipient_id = match.user_id
+
+        # Load recipient info for notifications
+        recipient_result = await session.execute(
+            select(User).where(User.id == recipient_id)
+        )
+        recipient = recipient_result.scalar_one_or_none()
+
         await manager.connect(websocket, match_id, user.id)
 
         try:
@@ -109,10 +129,22 @@ async def websocket_chat(
 
                 await manager.broadcast(match_id, outgoing)
 
+                # Notify recipient if not connected to this chat
+                conns = manager._connections.get(match_id, {})
+                if recipient and recipient_id not in conns:
+                    await NotificationService.notify_new_message(
+                        recipient.telegram_id,
+                        user.first_name,
+                        text,
+                        match_id,
+                    )
+
         except WebSocketDisconnect:
             await manager.disconnect(match_id, user.id)
         except Exception:
-            logger.exception("WebSocket error for match_id=%s user_id=%s", match_id, user.id)
+            logger.exception(
+                "WebSocket error for match_id=%s user_id=%s", match_id, user.id
+            )
             await manager.disconnect(match_id, user.id)
 
 

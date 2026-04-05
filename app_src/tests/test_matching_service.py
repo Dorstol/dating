@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from core.models import Interest, Match, User
+from core.models import Match, User
 from core.models.enums import GenderEnum
 
 # Avoid circular import: matches_service imports from api.api_v1.fastapi_users
@@ -69,9 +69,7 @@ class TestProcessLike:
                 new_callable=AsyncMock,
             ),
         ):
-            result = await MatchingService.process_like(
-                session, user, other_user.id
-            )
+            result = await MatchingService.process_like(session, user, other_user.id)
 
         assert result.user_id == user.id
         assert result.matched_user_id == other_user.id
@@ -80,9 +78,7 @@ class TestProcessLike:
         session.add.assert_called_once()
         session.commit.assert_awaited_once()
 
-    async def test_mutual_like_sets_mutual_flag(
-        self, session, user, other_user
-    ):
+    async def test_mutual_like_sets_mutual_flag(self, session, user, other_user):
         existing = Match(
             user_id=other_user.id,
             matched_user_id=user.id,
@@ -111,18 +107,14 @@ class TestProcessLike:
                 new_callable=AsyncMock,
             ),
         ):
-            result = await MatchingService.process_like(
-                session, user, other_user.id
-            )
+            result = await MatchingService.process_like(session, user, other_user.id)
 
         assert existing.is_mutual is True
         assert result.is_mutual is True
         assert user.rating == 6  # incremented from 5
         assert other_user.rating == 4  # incremented from 3
 
-    async def test_duplicate_like_returns_existing(
-        self, session, user, other_user
-    ):
+    async def test_duplicate_like_returns_existing(self, session, user, other_user):
         existing = Match(
             user_id=user.id,
             matched_user_id=other_user.id,
@@ -146,9 +138,7 @@ class TestProcessLike:
                 return_value=existing,
             ),
         ):
-            result = await MatchingService.process_like(
-                session, user, other_user.id
-            )
+            result = await MatchingService.process_like(session, user, other_user.id)
 
         assert result is existing
         assert user.rating == 5  # unchanged

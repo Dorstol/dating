@@ -23,9 +23,7 @@ def upgrade() -> None:
         "users",
         sa.Column("telegram_id", sa.BigInteger(), nullable=True),
     )
-    op.create_unique_constraint(
-        "uq_users_telegram_id", "users", ["telegram_id"]
-    )
+    op.create_unique_constraint("uq_users_telegram_id", "users", ["telegram_id"])
 
     # Allow nullable for Telegram users who haven't completed profile yet
     op.alter_column("users", "gender", nullable=True)

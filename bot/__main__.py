@@ -5,8 +5,9 @@ import logging
 
 from aiogram import Bot, Dispatcher
 
-from bot.config import BOT_TOKEN
+from bot.config import BOT_TOKEN, REDIS_URL
 from bot.handlers import router
+from bot.notifications import NotificationListener
 
 logging.basicConfig(
     level=logging.INFO,
@@ -23,8 +24,15 @@ async def main() -> None:
     dp = Dispatcher()
     dp.include_router(router)
 
-    logger.info("Bot starting...")
-    await dp.start_polling(bot)
+    # Start notification listener
+    listener = NotificationListener(bot, REDIS_URL)
+    await listener.start()
+
+    try:
+        logger.info("Bot starting...")
+        await dp.start_polling(bot)
+    finally:
+        await listener.stop()
 
 
 if __name__ == "__main__":

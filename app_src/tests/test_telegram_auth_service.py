@@ -36,9 +36,7 @@ def _make_init_data(
     data_check_string = "\n".join(data_pairs)
 
     # Compute hash
-    secret_key = hmac.new(
-        b"WebAppData", bot_token.encode(), hashlib.sha256
-    ).digest()
+    secret_key = hmac.new(b"WebAppData", bot_token.encode(), hashlib.sha256).digest()
     computed_hash = hmac.new(
         secret_key, data_check_string.encode(), hashlib.sha256
     ).hexdigest()
@@ -56,9 +54,7 @@ class TestValidateInitData:
         mock_settings.BOT_TOKEN = BOT_TOKEN
         user_data = {"id": 12345, "first_name": "John"}
 
-        result = TelegramAuthService.validate_init_data(
-            _make_init_data(user_data)
-        )
+        result = TelegramAuthService.validate_init_data(_make_init_data(user_data))
 
         assert result["id"] == 12345
         assert result["first_name"] == "John"

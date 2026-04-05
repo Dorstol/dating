@@ -1,9 +1,8 @@
 """Unit tests for ConnectionManager."""
 
 import json
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
-import pytest
 
 from crud.services.connection_manager import ConnectionManager
 
@@ -112,9 +111,7 @@ class TestBroadcast:
         msg = {"text": "hello", "sender_id": 10}
         await cm.broadcast(1, msg)
 
-        mock_r.publish.assert_awaited_once_with(
-            "chat:1", json.dumps(msg)
-        )
+        mock_r.publish.assert_awaited_once_with("chat:1", json.dumps(msg))
 
     async def test_falls_back_to_local_on_redis_error(self):
         import redis

@@ -2,8 +2,6 @@
 
 from unittest.mock import AsyncMock, patch
 
-import pytest
-from aiogram.types import WebAppInfo
 
 from bot.handlers import cmd_start
 

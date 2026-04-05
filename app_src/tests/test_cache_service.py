@@ -48,9 +48,7 @@ class TestCacheService:
     async def test_set_json_stores_data_with_ttl(self, mock_redis):
         CacheService._redis = mock_redis
 
-        await CacheService.set_json(
-            {"items": []}, "suggestions", 1, 20, 0, ttl=300
-        )
+        await CacheService.set_json({"items": []}, "suggestions", 1, 20, 0, ttl=300)
 
         mock_redis.set.assert_awaited_once_with(
             "dating:suggestions:1:20:0",
@@ -89,9 +87,7 @@ class TestCacheService:
 
         mock_redis.delete.assert_not_awaited()
 
-    async def test_invalidate_suggestions_delegates_to_delete_pattern(
-        self, mock_redis
-    ):
+    async def test_invalidate_suggestions_delegates_to_delete_pattern(self, mock_redis):
         mock_redis.scan.return_value = (0, [])
         CacheService._redis = mock_redis
 

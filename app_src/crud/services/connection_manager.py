@@ -22,17 +22,13 @@ class ConnectionManager:
 
     async def _get_redis(self) -> redis.Redis:
         if self._redis is None:
-            self._redis = redis.from_url(
-                settings.REDIS_URL, decode_responses=True
-            )
+            self._redis = redis.from_url(settings.REDIS_URL, decode_responses=True)
         return self._redis
 
     def _channel(self, match_id: int) -> str:
         return f"chat:{match_id}"
 
-    async def connect(
-        self, websocket: WebSocket, match_id: int, user_id: int
-    ) -> None:
+    async def connect(self, websocket: WebSocket, match_id: int, user_id: int) -> None:
         """Register a WebSocket connection and subscribe to Redis channel."""
         await websocket.accept()
 

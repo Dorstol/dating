@@ -25,18 +25,14 @@ class TestGetOrCreateInterests:
         session.execute.assert_not_awaited()
 
     async def test_whitespace_only_returns_empty(self, session):
-        result = await InterestService.get_or_create_interests(
-            session, ["  ", ""]
-        )
+        result = await InterestService.get_or_create_interests(session, ["  ", ""])
         assert result == []
 
     async def test_returns_existing_interests(self, session):
         existing = [Interest(id=1, name="music")]
         self._mock_existing(session, existing)
 
-        result = await InterestService.get_or_create_interests(
-            session, ["music"]
-        )
+        result = await InterestService.get_or_create_interests(session, ["music"])
         assert len(result) == 1
         assert result[0].name == "music"
 
@@ -44,9 +40,7 @@ class TestGetOrCreateInterests:
         self._mock_existing(session, [])
         session.add = MagicMock()
 
-        result = await InterestService.get_or_create_interests(
-            session, ["photography"]
-        )
+        result = await InterestService.get_or_create_interests(session, ["photography"])
         assert len(result) == 1
         session.add.assert_called_once()
         session.flush.assert_awaited_once()
@@ -66,9 +60,7 @@ class TestGetOrCreateInterests:
         self._mock_existing(session, [])
         session.add = MagicMock()
 
-        result = await InterestService.get_or_create_interests(
-            session, ["Music", "music"]
-        )
+        await InterestService.get_or_create_interests(session, ["Music", "music"])
         # Only one should be created despite different cases
         assert session.add.call_count == 1
 
@@ -76,9 +68,7 @@ class TestGetOrCreateInterests:
         self._mock_existing(session, [])
         session.add = MagicMock()
 
-        await InterestService.get_or_create_interests(
-            session, ["  Photography  "]
-        )
+        await InterestService.get_or_create_interests(session, ["  Photography  "])
         added_interest = session.add.call_args[0][0]
         assert added_interest.name == "Photography"  # stripped but preserves case
 
@@ -89,8 +79,13 @@ class TestUpdateUserInterests:
         session.add = MagicMock()
 
         user = User(
-            id=1, email="a@b.com", hashed_password="x", first_name="A",
-            last_name="B", location="NYC", age=25,
+            id=1,
+            email="a@b.com",
+            hashed_password="x",
+            first_name="A",
+            last_name="B",
+            location="NYC",
+            age=25,
         )
         user.interests = []
 
@@ -99,9 +94,7 @@ class TestUpdateUserInterests:
         mock_result.scalars.return_value.all.return_value = existing
         session.execute.return_value = mock_result
 
-        result = await InterestService.update_user_interests(
-            session, user, ["music"]
-        )
+        result = await InterestService.update_user_interests(session, user, ["music"])
         assert result == existing
         assert user.interests == existing
         session.commit.assert_awaited_once()

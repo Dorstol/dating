@@ -26,8 +26,7 @@ def upgrade() -> None:
     op.execute("DROP TYPE IF EXISTS genderenum")
     op.execute("CREATE TYPE genderenum AS ENUM ('Male', 'Female')")
     op.execute(
-        "ALTER TABLE users ALTER COLUMN gender TYPE genderenum "
-        "USING gender::genderenum"
+        "ALTER TABLE users ALTER COLUMN gender TYPE genderenum USING gender::genderenum"
     )
     op.execute("ALTER TABLE users ALTER COLUMN gender SET NOT NULL")
 
@@ -37,6 +36,5 @@ def downgrade() -> None:
     op.execute("DROP TYPE IF EXISTS genderenum")
     op.execute("CREATE TYPE genderenum AS ENUM ('Male', 'Female', 'Other')")
     op.execute(
-        "ALTER TABLE users ALTER COLUMN gender TYPE genderenum "
-        "USING gender::genderenum"
+        "ALTER TABLE users ALTER COLUMN gender TYPE genderenum USING gender::genderenum"
     )

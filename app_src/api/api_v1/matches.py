@@ -49,7 +49,10 @@ async def suggest_matches(
     response = PaginatedResponse(items=items, total=total, limit=limit, offset=offset)
     await CacheService.set_json(
         response.model_dump(mode="json"),
-        "suggestions", user.id, limit, offset,
+        "suggestions",
+        user.id,
+        limit,
+        offset,
         ttl=settings.cache.suggestions_ttl,
     )
     return response

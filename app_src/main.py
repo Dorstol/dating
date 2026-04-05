@@ -46,6 +46,7 @@ async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
         content={"detail": f"Rate limit exceeded: {exc.detail}"},
     )
 
+
 REQUEST_COUNT = Counter(
     "fastapi_requests_total",
     "Total number of requests",
@@ -100,9 +101,7 @@ async def auth_rate_limit_middleware(request: Request, call_next):
             if not _auth_limiter.hit(parsed_limit, key):
                 return JSONResponse(
                     status_code=429,
-                    content={
-                        "detail": f"Rate limit exceeded: {parsed_limit}"
-                    },
+                    content={"detail": f"Rate limit exceeded: {parsed_limit}"},
                 )
     return await call_next(request)
 

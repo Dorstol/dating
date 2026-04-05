@@ -67,9 +67,7 @@ class InterestService:
         """Get popular interests based on user count with total count."""
         from core.models import user_interests
 
-        total_result = await session.execute(
-            select(func.count()).select_from(Interest)
-        )
+        total_result = await session.execute(select(func.count()).select_from(Interest))
         total = total_result.scalar() or 0
 
         result = await session.execute(
@@ -95,10 +93,7 @@ class InterestService:
         total = total_result.scalar() or 0
 
         result = await session.execute(
-            select(Interest)
-            .where(filter_cond)
-            .limit(limit)
-            .offset(offset)
+            select(Interest).where(filter_cond).limit(limit).offset(offset)
         )
         return list(result.scalars().all()), total
 

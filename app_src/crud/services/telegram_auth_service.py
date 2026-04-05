@@ -69,9 +69,7 @@ class TelegramAuthService:
         return json.loads(unquote(user_data_str))
 
     @staticmethod
-    async def get_or_create_user(
-        session: AsyncSession, telegram_user: dict
-    ) -> User:
+    async def get_or_create_user(session: AsyncSession, telegram_user: dict) -> User:
         """
         Find existing user by telegram_id or create a new one.
 

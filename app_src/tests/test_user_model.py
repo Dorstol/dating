@@ -1,9 +1,5 @@
 """Unit tests for User model methods."""
 
-import pytest
-
-from core.models.enums import GenderEnum
-
 
 class TestUserRating:
     def test_increment_rating(self, make_user):
