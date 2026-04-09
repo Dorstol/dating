@@ -184,3 +184,9 @@ app_src/static/photos/
 # Telegram bot
 telegram_bot/logs/
 telegram_bot/temp/
+
+# Backups
+backups/
+
+# SSL certs
+certbot/
