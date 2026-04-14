@@ -28,8 +28,9 @@ class MatchingService:
         # Получаем ID заблокированных пользователей (в обе стороны)
         blocked_ids = await BlockReportService.get_blocked_user_ids(session, user.id)
 
+        gender_filter = User.gender != user.gender if user.gender else True
         base_filter = and_(
-            User.gender != user.gender,
+            gender_filter,
             User.id != user.id,
             User.is_active.is_(True),
         )
@@ -98,9 +99,10 @@ class MatchingService:
         blocked_ids: list[int] | None = None,
     ) -> list[User]:
         """Find basic matches without interest filtering, sorted by rating."""
+        gender_filter = User.gender != user.gender if user.gender else True
         query = select(User).where(
             and_(
-                User.gender != user.gender, User.id != user.id, User.is_active.is_(True)
+                gender_filter, User.id != user.id, User.is_active.is_(True)
             )
         )
 
