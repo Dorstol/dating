@@ -20,6 +20,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       const auth = useAuthStore()
       auth.logout()
+      window.location.reload()
     }
     return Promise.reject(error)
   },
