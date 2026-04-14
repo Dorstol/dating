@@ -30,5 +30,5 @@ RUN mkdir -p /app/static/photos
 
 EXPOSE 8000
 
-# Run via uv so the venv is activated
-CMD ["uv", "run", "python", "app_src/run_main.py"]
+# Run directly from the venv
+CMD [".venv/bin/python", "app_src/run_main.py"]
