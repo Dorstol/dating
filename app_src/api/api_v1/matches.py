@@ -46,7 +46,8 @@ async def suggest_matches(
         limit=limit,
         offset=offset,
     )
-    response = PaginatedResponse(items=items, total=total, limit=limit, offset=offset)
+    serialized_items = [UserRead.model_validate(u, from_attributes=True) for u in items]
+    response = PaginatedResponse(items=serialized_items, total=total, limit=limit, offset=offset)
     await CacheService.set_json(
         response.model_dump(mode="json"),
         "suggestions",
