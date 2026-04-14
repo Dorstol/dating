@@ -51,6 +51,7 @@ services:
       APP_CONFIG__REDIS_URL: redis://redis:6379
       APP_CONFIG__CORS__ALLOWED_ORIGINS: ${APP_CONFIG__CORS__ALLOWED_ORIGINS}
       APP_CONFIG__API__PREFIX: /api
+      APP_CONFIG__BOT_TOKEN: ${BOT_TOKEN}
     volumes:
       - photos:/app/static/photos
     depends_on:

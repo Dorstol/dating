@@ -54,6 +54,7 @@ async function handleLogin() {
 
     <div v-else-if="isTelegram" class="tg-notice">
       <p>Authenticating via Telegram...</p>
+      <p v-if="error" class="error">{{ error }}</p>
     </div>
 
     <form v-else @submit.prevent="handleLogin" class="login-form">
