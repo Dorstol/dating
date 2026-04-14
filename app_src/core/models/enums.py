@@ -2,8 +2,8 @@ from enum import Enum
 
 
 class GenderEnum(str, Enum):
-    MALE = "Male"
-    FEMALE = "Female"
+    Male = "Male"
+    Female = "Female"
 
 
 class ReportReasonEnum(str, Enum):
