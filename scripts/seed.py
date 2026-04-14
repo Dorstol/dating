@@ -1,13 +1,17 @@
 """Generate test users, interests, and mutual matches."""
 
 import asyncio
+import os
 import random
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-DB_URL = "postgresql+asyncpg://user:password@localhost:5432/dating"
+DB_URL = os.environ.get(
+    "APP_CONFIG__DB__URL",
+    "postgresql+asyncpg://user:password@localhost:5432/dating",
+)
 
 FIRST_NAMES_M = ["Alex", "Max", "Ivan", "Dmitry", "Artem", "Nikita", "Sergey", "Andrey", "Pavel", "Roman"]
 FIRST_NAMES_F = ["Anna", "Maria", "Olga", "Elena", "Kate", "Sofia", "Daria", "Alina", "Yana", "Polina"]
