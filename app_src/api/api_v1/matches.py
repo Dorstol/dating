@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi.responses import JSONResponse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -38,7 +39,7 @@ async def suggest_matches(
     """Get potential matches for the current user."""
     cached = await CacheService.get_json("suggestions", user.id, limit, offset)
     if cached is not None:
-        return cached
+        return JSONResponse(content=cached)
 
     items, total = await MatchingService.find_matches_by_interests_and_rating(
         session=session,
