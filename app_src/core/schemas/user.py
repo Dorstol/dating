@@ -13,6 +13,7 @@ class UserRead(schemas.BaseUser[UserIdType]):
     The secret/internal fields are excluded from the serialized output.
     """
 
+    email: str  # override EmailStr — Telegram users have fake emails
     first_name: str
     last_name: str
     gender: GenderEnum | None
