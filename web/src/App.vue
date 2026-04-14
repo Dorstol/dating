@@ -23,10 +23,18 @@ onMounted(() => {
   box-sizing: border-box;
 }
 
-body {
+html, body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: #fff;
   color: #1a1a1a;
   -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  height: 100%;
+}
+
+#app {
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 </style>
