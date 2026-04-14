@@ -72,7 +72,7 @@ async def seed(n_users: int = 20, n_matches: int = 5):
             is_male = i % 2 == 0
             first = random.choice(FIRST_NAMES_M if is_male else FIRST_NAMES_F)
             last = random.choice(LAST_NAMES)
-            gender = "MALE" if is_male else "FEMALE"
+            gender = "Male" if is_male else "Female"
             age = random.randint(18, 35)
             location = random.choice(LOCATIONS)
             bio = random.choice(BIOS)
