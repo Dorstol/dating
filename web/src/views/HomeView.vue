@@ -1,6 +1,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import api from '../api/client'
+
+const router = useRouter()
 
 const suggestions = ref([])
 const currentIndex = ref(0)
@@ -96,9 +99,9 @@ function next() {
     </div>
 
     <nav class="bottom-nav">
-      <router-link to="/" class="nav-item active">Discover</router-link>
-      <router-link to="/matches" class="nav-item">Matches</router-link>
-      <router-link to="/profile" class="nav-item">Profile</router-link>
+      <div class="nav-item active" @click="router.push('/')">Discover</div>
+      <div class="nav-item" @click="router.push('/matches')">Matches</div>
+      <div class="nav-item" @click="router.push('/profile')">Profile</div>
     </nav>
   </div>
 </template>
@@ -236,8 +239,7 @@ function next() {
   font-size: 14px;
 }
 
-.nav-item.active,
-.nav-item.router-link-active {
+.nav-item.active {
   color: #7c3aed;
   font-weight: 600;
 }

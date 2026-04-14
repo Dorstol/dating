@@ -132,9 +132,9 @@ function handleLogout() {
     <button @click="handleLogout" class="btn logout">Log out</button>
 
     <nav class="bottom-nav">
-      <router-link to="/" class="nav-item">Discover</router-link>
-      <router-link to="/matches" class="nav-item">Matches</router-link>
-      <router-link to="/profile" class="nav-item active">Profile</router-link>
+      <div class="nav-item" @click="router.push('/')">Discover</div>
+      <div class="nav-item" @click="router.push('/matches')">Matches</div>
+      <div class="nav-item active" @click="router.push('/profile')">Profile</div>
     </nav>
   </div>
 </template>
@@ -301,8 +301,7 @@ function handleLogout() {
   font-size: 14px;
 }
 
-.nav-item.active,
-.nav-item.router-link-active {
+.nav-item.active {
   color: #7c3aed;
   font-weight: 600;
 }
