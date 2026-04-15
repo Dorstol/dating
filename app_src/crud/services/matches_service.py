@@ -28,6 +28,12 @@ class MatchingService:
         # Получаем ID заблокированных пользователей (в обе стороны)
         blocked_ids = await BlockReportService.get_blocked_user_ids(session, user.id)
 
+        # Получаем ID уже лайкнутых пользователей
+        liked_result = await session.execute(
+            select(Match.matched_user_id).where(Match.user_id == user.id)
+        )
+        liked_ids = [row[0] for row in liked_result]
+
         gender_filter = User.gender != user.gender if user.gender else True
         base_filter = and_(
             gender_filter,
@@ -36,6 +42,8 @@ class MatchingService:
         )
         if blocked_ids:
             base_filter = and_(base_filter, User.id.notin_(blocked_ids))
+        if liked_ids:
+            base_filter = and_(base_filter, User.id.notin_(liked_ids))
 
         # Total count of all potential matches
         total_result = await session.execute(
@@ -45,7 +53,8 @@ class MatchingService:
 
         if not user.interests:
             matches = await MatchingService._find_basic_matches(
-                session, user, limit, offset=offset, blocked_ids=blocked_ids
+                session, user, limit, offset=offset, blocked_ids=blocked_ids,
+                liked_ids=liked_ids,
             )
             return matches, total
 
@@ -84,6 +93,7 @@ class MatchingService:
                 remaining_limit,
                 exclude_ids=matched_user_ids,
                 blocked_ids=blocked_ids,
+                liked_ids=liked_ids,
             )
             matched_users.extend(basic_matches)
 
@@ -97,6 +107,7 @@ class MatchingService:
         exclude_ids: list[int] | None = None,
         offset: int = 0,
         blocked_ids: list[int] | None = None,
+        liked_ids: list[int] | None = None,
     ) -> list[User]:
         """Find basic matches without interest filtering, sorted by rating."""
         gender_filter = User.gender != user.gender if user.gender else True
@@ -111,6 +122,9 @@ class MatchingService:
 
         if blocked_ids:
             query = query.where(User.id.notin_(blocked_ids))
+
+        if liked_ids:
+            query = query.where(User.id.notin_(liked_ids))
 
         query = (
             query.order_by(
