@@ -113,8 +113,7 @@ function next() {
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
-  padding: 16px;
-  padding-bottom: 72px;
+  padding: 16px 16px 72px;
   box-sizing: border-box;
 }
 
@@ -125,16 +124,22 @@ function next() {
 }
 
 .card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   max-width: 400px;
-  margin: 16px auto;
+  width: 100%;
+  margin: 8px auto 0;
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  min-height: 0;
 }
 
 .card-photo {
   width: 100%;
-  height: 360px;
+  flex: 1;
+  min-height: 0;
   background: #f0f0f0;
 }
 
