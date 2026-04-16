@@ -101,3 +101,4 @@ class UserUpdate(schemas.BaseUserUpdate):
     interests: list[str] | None = None
     bio: str | None = None
     age: int | None = None
+    location: str | None = None

@@ -11,7 +11,7 @@ const router = useRouter()
 const view = ref('profile')
 const saving = ref(false)
 
-const form = ref({ bio: '', age: null, gender: '' })
+const form = ref({ bio: '', age: null, gender: '', location: '' })
 
 // interests: track selected by name (API accepts names)
 const myInterestNames = ref(new Set())
@@ -33,6 +33,7 @@ function syncForm() {
   form.value.bio = auth.user.bio || ''
   form.value.age = auth.user.age
   form.value.gender = auth.user.gender || ''
+  form.value.location = auth.user.location || ''
 }
 
 async function saveProfile() {
@@ -42,6 +43,7 @@ async function saveProfile() {
       bio: form.value.bio || null,
       age: form.value.age ? Number(form.value.age) : null,
       gender: form.value.gender || null,
+      location: form.value.location || null,
     })
     await auth.fetchUser()
     view.value = 'profile'
@@ -202,6 +204,10 @@ async function unblock(userId) {
             <option value="Male">Male</option>
             <option value="Female">Female</option>
           </select>
+        </label>
+        <label>
+          Location
+          <input v-model="form.location" type="text" placeholder="City or country" />
         </label>
         <div class="form-actions">
           <button type="button" @click="view = 'profile'" class="btn gray">Cancel</button>
