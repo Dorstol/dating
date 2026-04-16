@@ -11,6 +11,37 @@ const loading = ref(true)
 const actionLoading = ref(false)
 const swipeDir = ref(null) // 'left' | 'right' | null
 
+const menuOpen = ref(false)
+const reportModal = ref(false)
+const reportReasons = ['Spam', 'Fake', 'Harassment', 'Inappropriate Content']
+
+function openMenu() { menuOpen.value = true }
+function closeMenu() { menuOpen.value = false }
+
+async function blockUser() {
+  const user = current()
+  if (!user) return
+  closeMenu()
+  try {
+    await api.post(`/users/${user.id}/block`)
+    next()
+  } catch (e) {
+    console.error('Block failed', e)
+  }
+}
+
+async function reportUser(reason) {
+  const user = current()
+  if (!user) return
+  reportModal.value = false
+  try {
+    await api.post(`/users/${user.id}/report`, { reason })
+    next()
+  } catch (e) {
+    console.error('Report failed', e)
+  }
+}
+
 const photoIndex = ref(0)
 let touchStartX = 0
 
@@ -149,8 +180,13 @@ function wait(ms) {
       </div>
 
       <div class="card-info">
-        <h3>{{ current().first_name }}, {{ current().age || '?' }}</h3>
-        <p v-if="current().location" class="location">{{ current().location }}</p>
+        <div class="card-info-top">
+          <div>
+            <h3>{{ current().first_name }}, {{ current().age || '?' }}</h3>
+            <p v-if="current().location" class="location">{{ current().location }}</p>
+          </div>
+          <button class="menu-btn" @click.stop="openMenu">⋯</button>
+        </div>
         <p v-if="current().bio" class="bio">{{ current().bio }}</p>
         <div v-if="current().interests?.length" class="interests">
           <span v-for="i in current().interests" :key="i.id" class="tag">
@@ -162,6 +198,29 @@ function wait(ms) {
       <div class="actions">
         <button @click="pass" class="btn pass" :disabled="actionLoading">Pass</button>
         <button @click="like" class="btn like" :disabled="actionLoading">Like</button>
+      </div>
+    </div>
+
+    <!-- Overlay menu -->
+    <div v-if="menuOpen" class="overlay" @click="closeMenu">
+      <div class="menu-sheet" @click.stop>
+        <button class="menu-item danger" @click="blockUser">Block user</button>
+        <button class="menu-item danger" @click="closeMenu(); reportModal = true">Report user</button>
+        <button class="menu-item" @click="closeMenu">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Report modal -->
+    <div v-if="reportModal" class="overlay" @click="reportModal = false">
+      <div class="menu-sheet" @click.stop>
+        <p class="sheet-title">Reason for report</p>
+        <button
+          v-for="reason in reportReasons"
+          :key="reason"
+          class="menu-item"
+          @click="reportUser(reason)"
+        >{{ reason }}</button>
+        <button class="menu-item" @click="reportModal = false">Cancel</button>
       </div>
     </div>
 
@@ -281,6 +340,67 @@ function wait(ms) {
 
 .card-info {
   padding: 16px;
+}
+
+.card-info-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.menu-btn {
+  background: none;
+  border: none;
+  font-size: 22px;
+  color: #999;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+}
+
+.menu-sheet {
+  width: 100%;
+  background: white;
+  border-radius: 16px 16px 0 0;
+  padding: 8px 0 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.sheet-title {
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+  padding: 8px 16px 4px;
+}
+
+.menu-item {
+  padding: 16px;
+  background: none;
+  border: none;
+  font-size: 16px;
+  text-align: left;
+  cursor: pointer;
+  color: #1a1a1a;
+}
+
+.menu-item:active {
+  background: #f5f5f5;
+}
+
+.menu-item.danger {
+  color: #ef4444;
 }
 
 .card-info h3 {
