@@ -248,6 +248,15 @@ function next() {
   text-decoration: none;
   color: #999;
   font-size: 14px;
+  cursor: pointer;
+  padding: 6px 0;
+  border-radius: 8px;
+  transition: background 0.15s;
+  user-select: none;
+}
+
+.nav-item:active {
+  background: #f0e6ff;
 }
 
 .nav-item.active {
