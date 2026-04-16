@@ -9,6 +9,7 @@ const suggestions = ref([])
 const currentIndex = ref(0)
 const loading = ref(true)
 const actionLoading = ref(false)
+const swipeDir = ref(null) // 'left' | 'right' | null
 
 const current = () => suggestions.value[currentIndex.value] || null
 
@@ -34,8 +35,11 @@ async function like() {
   if (!user || actionLoading.value) return
 
   actionLoading.value = true
+  swipeDir.value = 'right'
+
   try {
     const { data } = await api.post(`/matches/${user.id}`)
+    await wait(350)
     if (data.is_mutual) {
       alert(`It's a match with ${user.first_name}!`)
     }
@@ -43,12 +47,19 @@ async function like() {
   } catch (e) {
     console.error('Like failed', e)
   } finally {
+    swipeDir.value = null
     actionLoading.value = false
   }
 }
 
-function pass() {
+async function pass() {
+  if (actionLoading.value) return
+  actionLoading.value = true
+  swipeDir.value = 'left'
+  await wait(350)
   next()
+  swipeDir.value = null
+  actionLoading.value = false
 }
 
 function next() {
@@ -57,6 +68,10 @@ function next() {
   } else {
     suggestions.value = []
   }
+}
+
+function wait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
 }
 </script>
 
@@ -71,7 +86,11 @@ function next() {
       <button @click="loadSuggestions" class="btn reload">Refresh</button>
     </div>
 
-    <div v-else class="card">
+    <div
+      v-else
+      class="card"
+      :class="{ 'swipe-left': swipeDir === 'left', 'swipe-right': swipeDir === 'right' }"
+    >
       <div class="card-photo">
         <img
           v-if="current().photo"
@@ -134,6 +153,18 @@ function next() {
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   min-height: 0;
+  transform-origin: bottom center;
+  transition: transform 0.35s ease, opacity 0.35s ease;
+}
+
+.card.swipe-left {
+  transform: translateX(-130%) rotate(-20deg);
+  opacity: 0;
+}
+
+.card.swipe-right {
+  transform: translateX(130%) rotate(20deg);
+  opacity: 0;
 }
 
 .card-photo {
