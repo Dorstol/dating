@@ -108,8 +108,14 @@ function next() {
 
 <style scoped>
 .home {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
   padding: 16px;
   padding-bottom: 72px;
+  box-sizing: border-box;
 }
 
 .status {
