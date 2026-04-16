@@ -16,6 +16,7 @@ const messagesContainer = ref(null)
 let ws = null
 
 onMounted(async () => {
+  if (!auth.user) await auth.fetchUser()
   await loadHistory()
   connectWebSocket()
 })
@@ -162,13 +163,17 @@ function formatTime(dateStr) {
   padding: 10px 14px;
   border-radius: 16px;
   background: #f0f0f0;
+  color: #1a1a1a;
   align-self: flex-start;
+  border-bottom-left-radius: 4px;
 }
 
 .message.own {
   background: #7c3aed;
   color: white;
   align-self: flex-end;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 4px;
 }
 
 .text {
