@@ -60,10 +60,6 @@ async function uploadPhoto(event) {
   }
 }
 
-function handleLogout() {
-  auth.logout()
-  router.push({ name: 'Login' })
-}
 </script>
 
 <template>
@@ -129,9 +125,7 @@ function handleLogout() {
     </div>
     <p v-else class="status">Loading...</p>
 
-    <button @click="handleLogout" class="btn logout">Log out</button>
-
-    <nav class="bottom-nav">
+<nav class="bottom-nav">
       <div class="nav-item" @click="router.push('/')">Discover</div>
       <div class="nav-item" @click="router.push('/matches')">Matches</div>
       <div class="nav-item active" @click="router.push('/profile')">Profile</div>
@@ -268,12 +262,6 @@ function handleLogout() {
   background: #f3f3f3;
   color: #666;
   flex: 1;
-}
-
-.btn.logout {
-  background: #ef4444;
-  color: white;
-  margin-top: 16px;
 }
 
 .status {
