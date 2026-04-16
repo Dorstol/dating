@@ -29,7 +29,7 @@ class TestProcessLike:
         return make_user(
             id=1,
             email="john@example.com",
-            gender=GenderEnum.MALE,
+            gender=GenderEnum.Male,
             rating=5,
         )
 
@@ -38,7 +38,7 @@ class TestProcessLike:
         return make_user(
             id=2,
             email="alice@example.com",
-            gender=GenderEnum.FEMALE,
+            gender=GenderEnum.Female,
             rating=3,
         )
 

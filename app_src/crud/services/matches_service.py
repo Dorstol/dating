@@ -212,20 +212,15 @@ class MatchingService:
     ) -> Match:
         """Handle cases where a match already exists."""
         if existing_match.user_id == matched_user.id:
-            # The other user already liked us - make it mutual
+            # The other user already liked us - make it mutual.
+            # We update the single existing record so both users share the same match_id
+            # (creating a reverse record would give each user a different id → broken chat).
             existing_match.is_mutual = True
 
             # Increment ratings for both users when match becomes mutual
             user.increment_rating()
             matched_user.increment_rating()
 
-            # Create the reverse match
-            reverse_match = Match(
-                user_id=user.id,
-                matched_user_id=matched_user.id,
-                is_mutual=True,
-            )
-            session.add(reverse_match)
             await session.commit()
 
             await CacheService.invalidate_suggestions(user.id)
@@ -241,7 +236,7 @@ class MatchingService:
                 user.first_name,
             )
 
-            return reverse_match
+            return existing_match
         else:
             # We already liked this user
             return existing_match
@@ -274,19 +269,43 @@ class MatchingService:
         limit: int = 20,
         offset: int = 0,
     ) -> tuple[list[Match], int]:
-        """Get paginated matches for a user with total count."""
+        """Get paginated matches for a user with total count.
+
+        Uses min(id) per canonical pair so that both participants always see
+        the same match_id — required for the shared WebSocket chat channel.
+        """
         from sqlalchemy.orm import joinedload
+
+        # Subquery: canonical (min) match id per unique pair.
+        # Includes matches where the user is liker (user_id) OR liked in a
+        # mutual match (matched_user_id). Deduplicates legacy reverse records.
+        canonical_subq = (
+            select(func.min(Match.id).label("canonical_id"))
+            .where(
+                or_(
+                    Match.user_id == user_id,
+                    and_(
+                        Match.matched_user_id == user_id,
+                        Match.is_mutual.is_(True),
+                    ),
+                )
+            )
+            .group_by(
+                func.least(Match.user_id, Match.matched_user_id),
+                func.greatest(Match.user_id, Match.matched_user_id),
+            )
+        ).subquery()
 
         # Total count
         total_result = await session.execute(
-            select(func.count()).select_from(Match).where(Match.user_id == user_id)
+            select(func.count()).select_from(canonical_subq)
         )
         total = total_result.scalar() or 0
 
         # Paginated results
         query = (
             select(Match)
-            .where(Match.user_id == user_id)
+            .join(canonical_subq, Match.id == canonical_subq.c.canonical_id)
             .options(joinedload(Match.matched_user))
             .order_by(Match.created_at.desc())
             .limit(limit)

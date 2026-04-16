@@ -28,7 +28,7 @@ def make_user():
         email="test@example.com",
         first_name="John",
         last_name="Doe",
-        gender=GenderEnum.MALE,
+        gender=GenderEnum.Male,
         age=25,
         location="New York",
         rating=5,
