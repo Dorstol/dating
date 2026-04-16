@@ -58,6 +58,17 @@ async function uploadPhoto(event) {
   } catch (e) {
     console.error('Upload failed', e)
   }
+  // reset input so same file can be re-selected
+  event.target.value = ''
+}
+
+async function deletePhoto(photoId) {
+  try {
+    await api.delete(`/users/me/photos/${photoId}`)
+    await auth.fetchUser()
+  } catch (e) {
+    console.error('Delete photo failed', e)
+  }
 }
 
 </script>
@@ -68,18 +79,21 @@ async function uploadPhoto(event) {
 
     <div v-if="auth.user" class="profile-card">
       <div class="photo-section">
-        <div class="photo">
-          <img
-            v-if="auth.user.photo"
-            :src="`/static/photos/${auth.user.photo}`"
-            alt="Profile photo"
-          />
-          <span v-else class="initials">
-            {{ auth.user.first_name[0] }}
-          </span>
+        <div class="photos-grid">
+          <div
+            v-for="p in auth.user.photos"
+            :key="p.id"
+            class="photo-thumb"
+          >
+            <img :src="`/static/photos/${p.filename}`" alt="Photo" />
+            <button class="delete-photo" @click="deletePhoto(p.id)">×</button>
+          </div>
+          <div v-if="!auth.user.photos.length" class="photo-thumb placeholder">
+            <span class="initials">{{ auth.user.first_name[0] }}</span>
+          </div>
         </div>
-        <label class="upload-btn">
-          Change photo
+        <label class="upload-btn" v-if="auth.user.photos.length < 6">
+          + Add photo
           <input type="file" accept="image/*" @change="uploadPhoto" hidden />
         </label>
       </div>
@@ -144,26 +158,54 @@ async function uploadPhoto(event) {
 }
 
 .photo-section {
-  text-align: center;
   margin-bottom: 16px;
 }
 
-.photo {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  margin: 0 auto 12px;
+.photos-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.photo-thumb {
+  position: relative;
+  aspect-ratio: 3/4;
+  border-radius: 10px;
   overflow: hidden;
   background: #f0e6ff;
+}
+
+.photo-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-thumb.placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.photo img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.delete-photo {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0,0,0,0.5);
+  color: white;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
 }
 
 .initials {
@@ -172,9 +214,13 @@ async function uploadPhoto(event) {
 }
 
 .upload-btn {
+  display: inline-block;
   color: #7c3aed;
   font-size: 14px;
   cursor: pointer;
+  padding: 8px 16px;
+  border: 1px dashed #7c3aed;
+  border-radius: 8px;
 }
 
 .name {

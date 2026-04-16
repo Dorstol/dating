@@ -1,10 +1,20 @@
+from __future__ import annotations
+
 from fastapi_users import schemas
-from pydantic import Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from core.models import GenderEnum
 from core.types.user_id import UserIdType
 
 from .interest import InterestRead
+
+
+class PhotoRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    filename: str
+    order: int
 
 
 class UserRead(schemas.BaseUser[UserIdType]):
@@ -21,10 +31,24 @@ class UserRead(schemas.BaseUser[UserIdType]):
     bio: str | None
     age: int | None
     photo: str | None
+    photos: list[PhotoRead] = []
     location: str | None
     is_active: bool = Field(exclude=True)
     is_superuser: bool = Field(exclude=True)
     is_verified: bool = Field(exclude=True)
+
+    @field_validator("photos", mode="before")
+    @classmethod
+    def coerce_photos(cls, v: object) -> list[PhotoRead]:
+        if not isinstance(v, list):
+            return []
+        result = []
+        for item in v:
+            if isinstance(item, PhotoRead):
+                result.append(item)
+            elif hasattr(item, "id") and hasattr(item, "filename"):
+                result.append(PhotoRead.model_validate(item))
+        return result
 
 
 class UserCreate(schemas.BaseUserCreate):

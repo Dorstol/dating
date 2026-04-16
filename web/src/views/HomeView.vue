@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api/client'
 
@@ -11,7 +11,37 @@ const loading = ref(true)
 const actionLoading = ref(false)
 const swipeDir = ref(null) // 'left' | 'right' | null
 
+const photoIndex = ref(0)
+let touchStartX = 0
+
 const current = () => suggestions.value[currentIndex.value] || null
+
+// Reset photo index when card changes
+watch(currentIndex, () => { photoIndex.value = 0 })
+
+function allPhotos(user) {
+  // photos is list of {id, filename, order}
+  if (user.photos && user.photos.length) return user.photos.map(p => p.filename)
+  if (user.photo) return [user.photo]
+  return []
+}
+
+function onTouchStart(e) {
+  touchStartX = e.touches[0].clientX
+}
+
+function onTouchEnd(e) {
+  const user = current()
+  if (!user) return
+  const photos = allPhotos(user)
+  if (photos.length <= 1) return
+
+  const dx = e.changedTouches[0].clientX - touchStartX
+  if (Math.abs(dx) < 40) return // ignore tiny swipes
+
+  if (dx < 0 && photoIndex.value < photos.length - 1) photoIndex.value++
+  else if (dx > 0 && photoIndex.value > 0) photoIndex.value--
+}
 
 onMounted(async () => {
   await loadSuggestions()
@@ -91,12 +121,30 @@ function wait(ms) {
       class="card"
       :class="{ 'swipe-left': swipeDir === 'left', 'swipe-right': swipeDir === 'right' }"
     >
-      <div class="card-photo">
-        <img
-          v-if="current().photo"
-          :src="`/static/photos/${current().photo}`"
-          :alt="current().first_name"
-        />
+      <div
+        class="card-photo"
+        @touchstart.passive="onTouchStart"
+        @touchend.passive="onTouchEnd"
+      >
+        <template v-if="allPhotos(current()).length">
+          <img
+            :src="`/static/photos/${allPhotos(current())[photoIndex]}`"
+            :alt="current().first_name"
+          />
+          <!-- tap zones for prev/next -->
+          <div class="photo-prev" @click="photoIndex > 0 && photoIndex--" />
+          <div class="photo-next" @click="photoIndex < allPhotos(current()).length - 1 && photoIndex++" />
+          <!-- dots -->
+          <div v-if="allPhotos(current()).length > 1" class="photo-dots">
+            <span
+              v-for="(_, i) in allPhotos(current())"
+              :key="i"
+              class="dot"
+              :class="{ active: i === photoIndex }"
+              @click.stop="photoIndex = i"
+            />
+          </div>
+        </template>
         <div v-else class="no-photo">{{ current().first_name[0] }}</div>
       </div>
 
@@ -172,12 +220,52 @@ function wait(ms) {
   flex: 1;
   min-height: 0;
   background: #f0f0f0;
+  position: relative;
+  overflow: hidden;
 }
 
 .card-photo img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
+}
+
+.photo-prev,
+.photo-next {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 35%;
+  cursor: pointer;
+}
+
+.photo-prev { left: 0; }
+.photo-next { right: 0; }
+
+.photo-dots {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  pointer-events: none;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  pointer-events: all;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.dot.active {
+  background: white;
 }
 
 .no-photo {
