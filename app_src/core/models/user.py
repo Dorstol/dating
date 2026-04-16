@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
     from .interest import Interest
+    from .user_photo import UserPhoto
 
 
 class User(Base, IntIdPkMixin, SQLAlchemyBaseUserTable[UserIdType]):
@@ -47,6 +48,14 @@ class User(Base, IntIdPkMixin, SQLAlchemyBaseUserTable[UserIdType]):
         nullable=False,
         default=0,
         server_default="0",
+    )
+
+    photos: Mapped[list["UserPhoto"]] = relationship(
+        "UserPhoto",
+        back_populates="user",
+        order_by="UserPhoto.order",
+        lazy="selectin",
+        cascade="all, delete-orphan",
     )
 
     # Связь с интересами (многие-ко-многим)

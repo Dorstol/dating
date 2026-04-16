@@ -2,6 +2,7 @@ __all__ = (
     "db_helper",
     "Base",
     "User",
+    "UserPhoto",
     "Match",
     "Message",
     "Block",
@@ -24,3 +25,4 @@ from .match import Match
 from .message import Message
 from .report import Report
 from .user import User
+from .user_photo import UserPhoto
