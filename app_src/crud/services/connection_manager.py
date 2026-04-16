@@ -91,17 +91,13 @@ class ConnectionManager:
     async def _listen(self) -> None:
         """Listen for messages from Redis Pub/Sub and deliver to local WebSockets."""
         try:
-            while self._pubsub:
-                message = await self._pubsub.get_message(
-                    ignore_subscribe_messages=True, timeout=1.0
-                )
-                if message and message["type"] == "message":
+            async for message in self._pubsub.listen():
+                if message["type"] == "message":
                     channel = message["channel"]
                     # channel format: "chat:{match_id}"
                     match_id = int(channel.split(":")[1])
                     data = json.loads(message["data"])
                     await self._deliver_local(match_id, data)
-                await asyncio.sleep(0.01)
         except asyncio.CancelledError:
             pass
         except Exception:
